@@ -1,0 +1,8 @@
+- [x] Modify verifyPhoneOtpForRegistration in server/controllers/driver.controller.ts to save vehicle data and driver details to MongoDB, then send token
+- [x] Comment out sendingOtpToEmail and verifyingEmailOtp functions in server/controllers/driver.controller.ts
+- [x] Comment out email OTP routes in server/routes/driver.route.ts
+- [x] Modify phone-number.screen.tsx to always go to login screen after OTP verification (remove email verification step)
+- [x] Comment out the entire driver/screens/email-verification/email.verification.screen.tsx file
+- [x] Modify verifyPhoneOtpForLogin to only send OTP if driver exists in database
+- [x] Add direct registration endpoint for vehicle registration without OTP
+- [x] Modify document-verification.screen.tsx to call direct registration and show success message, then navigate to login
