@@ -22,13 +22,13 @@ export default function RenderRideItem({ item, colors }: any) {
           <View>
             <Text style={styles.data}>
               {item.title === "Total Earning"
-                ? driver?.totalEarning + " Ind"
+                ? (driver?.totalEarning || 0) + " ₹"
                 : item.title === "Complete Ride"
-                ? driver?.totalRides
+                ? driver?.totalRides || 0
                 : item.title === "Pending Ride"
-                ? driver?.pendingRides
+                ? driver?.pendingRides || 0
                 : item.title === "Cancel Ride"
-                ? driver?.cancelRides
+                ? driver?.cancelRides || 0
                 : 0}
             </Text>
           </View>

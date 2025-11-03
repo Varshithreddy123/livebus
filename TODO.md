@@ -1,6 +1,5 @@
-- [x] Modify verifyOtp in server/controllers/user.controller.ts to always sendToken for both existing and new users
-- [x] Comment out sendingOtpToEmail and verifyingEmail functions in server/controllers/user.controller.ts
-- [x] Comment out email OTP routes in server/routes/user.route.ts
-- [x] Comment out the email null check in user/screens/verification/otp-verification.screen.tsx to always go to home
-- [x] Comment out the entire user/screens/registration/registration.screen.tsx file
-- [x] Comment out the entire user/screens/email-verification/email.verification.screen.tsx file
+- [x] Update user/themes/app.fonts.tsx to use Poppins-Regular for all font weights
+- [x] Update driver/themes/app.fonts.tsx to use Poppins-Regular for all font weights
+- [x] Update user/app.json to load Poppins fonts via expo-font plugin
+- [x] Update driver/app.json to load Poppins fonts via expo-font plugin
+- [ ] Test the app to ensure fonts are applied correctly

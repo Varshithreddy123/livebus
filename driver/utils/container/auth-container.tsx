@@ -25,16 +25,16 @@ const AuthContainer = ({ container, topSpace, imageShow }: Props) => {
       behavior={Platform.OS === "ios" ? "padding" : "height"}
     >
       {imageShow && (
-        <Text
+        <Image
+          source={Images.logo}
           style={{
-            fontFamily: "TT-Octosquares-Medium",
-            fontSize: windowWidth(30),
-            textAlign: "center",
-            paddingTop: windowHeight(50),
+            width: windowWidth(200),
+            height: windowHeight(60),
+            alignSelf: "center",
+            marginTop: windowHeight(50),
+            resizeMode: "contain",
           }}
-        >
-          Ride Wave
-        </Text>
+        />
       )}
       <Image
         style={[styles.backgroundImage, { marginTop: topSpace }]}

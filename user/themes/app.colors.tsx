@@ -44,7 +44,7 @@ const color: Color = {
   whiteColor: "#fff",
   blackColor: "#000",
   primaryGray: "#E9E9E9",
-  buttonBg: "#665CFF",
+  buttonBg: "#0000FF",
   iconBg: "#32A284",
   modelBg: "rgba(0, 0, 0, 0.5)",
   darkHeader: "#272727",

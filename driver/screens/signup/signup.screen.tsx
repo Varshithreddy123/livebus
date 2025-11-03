@@ -1,4 +1,4 @@
-import { View, Text, ScrollView } from "react-native";
+import { View, Text, ScrollView, Image } from "react-native";
 import React, { useState } from "react";
 import { windowHeight, windowWidth } from "@/themes/app.constant";
 import ProgressBar from "@/components/common/progress.bar";
@@ -11,6 +11,7 @@ import { countryNameItems } from "@/configs/country-name-list";
 import Button from "@/components/common/button";
 import color from "@/themes/app.colors";
 import { router } from "expo-router";
+import Images from "@/utils/images";
 
 export default function SignupScreen() {
   const { colors } = useTheme();
@@ -63,16 +64,16 @@ export default function SignupScreen() {
     <ScrollView>
       <View>
         {/* logo */}
-        <Text
+        <Image
+          source={Images.logo}
           style={{
-            fontFamily: "TT-Octosquares-Medium",
-            fontSize: windowHeight(22),
-            paddingTop: windowHeight(50),
-            textAlign: "center",
+            width: windowWidth(150),
+            height: windowHeight(50),
+            alignSelf: "center",
+            marginTop: windowHeight(50),
+            resizeMode: "contain",
           }}
-        >
-          Ride Wave
-        </Text>
+        />
         <View style={{ padding: windowWidth(20) }}>
           <ProgressBar fill={1} />
           <View

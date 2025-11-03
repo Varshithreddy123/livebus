@@ -1,4 +1,4 @@
-import { Pressable, StyleSheet, Text } from "react-native";
+import { Pressable, StyleSheet, Text, ActivityIndicator } from "react-native";
 import React from "react";
 import { commonStyles } from "@/styles/common.style";
 import color from "@/themes/app.colors";
@@ -12,6 +12,7 @@ const Button: React.FC<ButtonProps> = ({
   backgroundColor,
   textColor,
   disabled,
+  loading,
 }) => {
   const widthNumber = width || "100%";
   return (
@@ -20,20 +21,24 @@ const Button: React.FC<ButtonProps> = ({
         styles.container,
         {
           width: widthNumber,
-          backgroundColor: backgroundColor || color.buttonBg,
+          backgroundColor: disabled ? color.greyColor : (backgroundColor || color.buttonBg),
         },
       ]}
       onPress={onPress}
-      disabled={disabled}
+      disabled={disabled || loading}
     >
-      <Text
-        style={[
-          commonStyles.extraBold,
-          { color: textColor || color.whiteColor },
-        ]}
-      >
-        {title}
-      </Text>
+      {loading ? (
+        <ActivityIndicator color={textColor || color.whiteColor} />
+      ) : (
+        <Text
+          style={[
+            commonStyles.extraBold,
+            { color: textColor || color.whiteColor },
+          ]}
+        >
+          {title}
+        </Text>
+      )}
     </Pressable>
   );
 };

@@ -8,9 +8,10 @@ import { useEffect, useState } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import axios from "axios";
 import RideCard from "@/components/ride/ride.card";
+import { recentRidesData } from "@/configs/constants";
 
 export default function HomeScreen() {
-  const [recentRides, setrecentRides] = useState([]);
+  const [recentRides, setrecentRides] = useState(recentRidesData);
 
   const getRecentRides = async () => {
     const accessToken = await AsyncStorage.getItem("accessToken");
@@ -26,7 +27,8 @@ export default function HomeScreen() {
   };
 
   useEffect(() => {
-    getRecentRides();
+    // For now, using mock data. Uncomment the line below to fetch from API
+    // getRecentRides();
   }, []);
 
   return (
@@ -35,11 +37,11 @@ export default function HomeScreen() {
         <View style={[external.p_5, external.ph_20]}>
           <Text
             style={{
-              fontFamily: "TT-Octosquares-Medium",
+              fontFamily: "Poppins-Bold",
               fontSize: 25,
             }}
           >
-            Ride Wave
+            Live Bus Tracking
           </Text>
           <LocationSearchBar />
         </View>

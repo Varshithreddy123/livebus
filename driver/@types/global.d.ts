@@ -6,6 +6,7 @@ type ButtonProps = {
   backgroundColor?: string;
   textColor?: string;
   disabled?: boolean;
+  loading?: boolean;
 };
 
 type DriverType = {
@@ -39,4 +40,8 @@ type recentRidesTypes = {
   dropoff: string;
   time: string;
   distance: string;
+  charge: string;
+  currentLocationName: string;
+  destinationLocationName: string;
+  createdAt: string;
 };

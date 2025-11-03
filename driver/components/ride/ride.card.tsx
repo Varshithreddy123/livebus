@@ -31,11 +31,11 @@ export default function RideCard({ item }: { item: any }) {
             <View
               style={[styles.verticalBorder, { borderColor: colors.border }]}
             />
-            <Text style={styles.price}>BDT {item.charge}</Text>
+            <Text style={styles.price}>₹ {item.charge}</Text>
           </View>
         </View>
         <View style={[styles.alignment, { flexDirection: "row" }]}>
-          <Text style={styles.timing}>{item.cratedAt?.slice(0, 10)}</Text>
+          <Text style={styles.timing}>{item.createdAt?.slice(0, 10)}</Text>
           <View style={styles.rate}>
             <Location color={colors.text} />
             <Text style={[styles.distance, { color: colors.text }]}>
@@ -44,6 +44,7 @@ export default function RideCard({ item }: { item: any }) {
           </View>
         </View>
       </View>
+
       <View
         style={[
           styles.bottom,
@@ -126,12 +127,6 @@ const styles = StyleSheet.create({
     marginHorizontal: windowWidth(0.4),
     fontFamily: fonts.bold,
     fontSize: fontSizes.FONT20,
-  },
-  border: {
-    borderStyle: "dashed",
-    borderBottomWidth: 5,
-    borderColor: color.border,
-    marginVertical: windowHeight(1.5),
   },
   timing: {
     color: color.secondaryFont,

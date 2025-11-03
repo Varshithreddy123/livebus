@@ -1,8 +1,13 @@
-import React, { useEffect, useState } from "react";
+import React from "react";
 import { Redirect } from "expo-router";
-import AsyncStorage from "@react-native-async-storage/async-storage";
+// import AsyncStorage from "@react-native-async-storage/async-storage";
 
 export default function index() {
+  // Temporary bypass — always go to home
+  return <Redirect href="/(tabs)/home" />;
+
+  /*
+  // Original logic — commented out for now
   const [isLoggedIn, setisLoggedIn] = useState(false);
   const [isLoading, setisLoading] = useState(true);
 
@@ -38,5 +43,8 @@ export default function index() {
     return null;
   }
 
-  return <Redirect href={!isLoggedIn ? "/(routes)/login" : "/(tabs)/home"} />;
+  return (
+    <Redirect href={!isLoggedIn ? "/(routes)/login" : "/(tabs)/home"} />
+  );
+  */
 }

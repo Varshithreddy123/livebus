@@ -7,12 +7,12 @@ export type Fonts = {
     ProBold: string;
   };
   const fonts: Fonts = {
-    semiBold: 'GTWalsheimPro-Medium',
-    medium: 'GTWalsheimPro-Medium',
-    regular: 'GTWalsheimPro-Regular',
-    bold: 'GTWalsheimPro-Bold',
-    extraBold: 'Lexend-ExtraBold',
-    ProBold: 'GTWalsheimPro-Bold',
+    semiBold: 'Poppins-Regular',
+    medium: 'Poppins-Regular',
+    regular: 'Poppins-Regular',
+    bold: 'Poppins-Regular',
+    extraBold: 'Poppins-Regular',
+    ProBold: 'Poppins-Regular',
   };
   export default fonts;
   

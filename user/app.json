@@ -4,7 +4,7 @@
     "slug": "RideWave",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/icon.png",
+    "icon": "./assets/images/logo/logo.png",
     "scheme": "RideWave",
     "userInterfaceStyle": "light",
     "splash": {
@@ -17,7 +17,7 @@
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/adaptive-icon.png",
+        "foregroundImage": "./assets/images/logo/logo.png",
         "backgroundColor": "#ffffff"
       },
       "package": "com.becodemy.RideWave",
@@ -28,14 +28,20 @@
       }
     },
     "web": {
-      "favicon": "./assets/favicon.png"
+      "favicon": "./assets/images/logo/logo.png"
     },
     "plugins": [
       "expo-router",
       [
         "expo-font",
         {
-          "fonts": ["./assets/fonts/TT-Octosquares-Medium.ttf"]
+          "fonts": [
+            "./assets/fonts/TT-Octosquares-Medium.ttf",
+            "./assets/fonts/Poppin/Poppins-Regular.ttf",
+            "./assets/fonts/Poppin/Poppins-Medium.ttf",
+            "./assets/fonts/Poppin/Poppins-SemiBold.ttf",
+            "./assets/fonts/Poppin/Poppins-Bold.ttf"
+          ]
         }
       ]
     ],

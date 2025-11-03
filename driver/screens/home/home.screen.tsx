@@ -385,7 +385,7 @@ export default function HomeScreen() {
   };
 
   return (
-    <View style={[external.fx_1]}>
+    <ScrollView style={[external.fx_1]} showsVerticalScrollIndicator={true}>
       <View style={styles.spaceBelow}>
         <Header isOn={isOn} toggleSwitch={() => handleStatusChange()} />
         <FlatList
@@ -394,19 +394,24 @@ export default function HomeScreen() {
           renderItem={({ item }) => (
             <RenderRideItem item={item} colors={colors} />
           )}
+          scrollEnabled={false}
         />
         <View style={[styles.rideContainer, { backgroundColor: colors.card }]}>
           <Text style={[styles.rideTitle, { color: colors.text }]}>
             Recent Rides
           </Text>
-          <ScrollView>
-            {recentRides?.map((item: any, index: number) => (
+          {recentRides?.length > 0 ? (
+            recentRides?.map((item: any, index: number) => (
               <RideCard item={item} key={index} />
-            ))}
-            {recentRides?.length === 0 && (
-              <Text>You didn't take any ride yet!</Text>
-            )}
-          </ScrollView>
+            ))
+          ) : (
+            recentRidesData.map((item: any, index: number) => (
+              <RideCard item={item} key={`mock-${index}`} />
+            ))
+          )}
+          {recentRides?.length === 0 && recentRidesData.length === 0 && (
+            <Text>You didn't take any ride yet!</Text>
+          )}
         </View>
       </View>
       <Modal
@@ -499,6 +504,6 @@ export default function HomeScreen() {
           </TouchableOpacity>
         </TouchableOpacity>
       </Modal>
-    </View>
+    </ScrollView>
   );
 }

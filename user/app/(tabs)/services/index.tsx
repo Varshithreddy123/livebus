@@ -1,10 +1,6 @@
-import { View, Text } from 'react-native'
 import React from 'react'
+import UserServiceMap from './UserServiceMap'
 
 export default function Services() {
-  return (
-    <View>
-      <Text>Services</Text>
-    </View>
-  )
+  return <UserServiceMap />
 }

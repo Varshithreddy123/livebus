@@ -21,8 +21,6 @@ driverRouter.post("/login", verifyPhoneOtpForLogin);
 
 driverRouter.post("/register-driver", registerDriverDirectly);
 
-// driverRouter.post("/registration-driver", verifyingEmailOtp);
-
 driverRouter.get("/me", isAuthenticatedDriver, getLoggedInDriverData);
 
 driverRouter.get("/get-drivers-data", getDriversById);

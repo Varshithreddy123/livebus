@@ -126,7 +126,11 @@ export const verifyOtp = async (
 
       if (isUserExist) {
         console.log("Existing user found, sending token...");
-        await sendToken(isUserExist, res);
+        res.status(201).json({
+          success: true,
+          user: isUserExist,
+          isNewUser: false,
+        });
       } else {
         console.log("New user, creating account...");
         // create account
@@ -136,7 +140,11 @@ export const verifyOtp = async (
           },
         });
         console.log("New user created, sending token...");
-        await sendToken(user, res);
+        res.status(201).json({
+          success: true,
+          user: user,
+          isNewUser: true,
+        });
       }
       console.log("=== VERIFY OTP END ===");
     } catch (error: any) {

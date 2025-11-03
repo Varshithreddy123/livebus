@@ -47,7 +47,7 @@ export default function PhoneNumberInput({
           ]}
         >
           <SelectInput
-            title="+880"
+            title="+91"
             placeholder="Select your country"
             value={countryCode}
             onValueChange={(text) => setCountryCode(text)}

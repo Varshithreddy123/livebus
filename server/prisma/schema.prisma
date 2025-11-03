@@ -11,11 +11,11 @@ model user {
   id                String   @id @default(auto()) @map("_id") @db.ObjectId
   name              String?
   phone_number      String   @unique
-  email             String?  @unique
+  email             String?  // optional email
   notificationToken String?
   ratings           Float    @default(0)
   totalRides        Float    @default(0)
-  cratedAt          DateTime @default(now())
+  createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
   rides             rides[]  @relation("UserRides")
 }
@@ -31,7 +31,7 @@ model driver {
   name                String
   country             String
   phone_number        String      @unique
-  email               String      @unique
+  email               String?     // optional email
   vehicle_type        VehicleType
   registration_number String      @unique
   registration_date   String
@@ -62,6 +62,6 @@ model rides {
   rating                  Float?
   user                    user     @relation("UserRides", fields: [userId], references: [id])
   driver                  driver   @relation("DriverRides", fields: [driverId], references: [id])
-  cratedAt                DateTime @default(now())
+  createdAt               DateTime @default(now())
   updatedAt               DateTime @updatedAt
 }

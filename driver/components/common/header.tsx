@@ -1,10 +1,11 @@
-import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
+import { View, Text, StyleSheet, TouchableOpacity, Image } from "react-native";
 import React from "react";
 import { fontSizes, windowHeight, windowWidth } from "@/themes/app.constant";
 import color from "@/themes/app.colors";
 import fonts from "@/themes/app.fonts";
 import SwitchToggle from "react-native-switch-toggle";
 import { Notification } from "@/utils/icons";
+import Images from "@/utils/images";
 
 interface HeaderProps {
   isOn: boolean;
@@ -26,16 +27,7 @@ export default function Header({ isOn, toggleSwitch }: HeaderProps) {
           ]}
         >
           <View style={[styles.headerTitle]}>
-            <Text
-              style={{
-                fontFamily: "TT-Octosquares-Medium",
-                fontSize: windowHeight(22),
-                color: "#fff",
-                textAlign: "left",
-              }}
-            >
-              Livebus Tracking
-            </Text>
+            <Text style={styles.logoTitle}>CHAKRAA</Text>
           </View>
           <TouchableOpacity style={styles.notificationIcon} activeOpacity={0.5}>
             <Notification color={color.whiteColor} />

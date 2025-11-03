@@ -32,10 +32,11 @@ export type Color = {
   red: string;
   primary: string;
   subPrimary: string;
+  greyColor: string;
 };
 
 const color: Color = {
-  primary: "#665CFF",
+  primary: "#0000FF",
   subPrimary: "#C9E2DB",
   lightGray: "#F5F5F5",
   regularText: "#8F8F8F",
@@ -48,7 +49,7 @@ const color: Color = {
   whiteColor: "#fff",
   blackColor: "#000",
   primaryGray: "#E9E9E9",
-  buttonBg: "#665CFF",
+  buttonBg: "#0000FF",
   iconBg: "#32A284",
   modelBg: "rgba(0, 0, 0, 0.5)",
   darkHeader: "#272727",
@@ -68,6 +69,7 @@ const color: Color = {
   iconRed: "#FEEBEB",
   darkBorder: "#474747",
   selectPrimary: "#E8F4F1",
+  greyColor: "#A0A0A0",
 };
 
 export default color;

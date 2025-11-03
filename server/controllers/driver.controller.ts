@@ -19,28 +19,75 @@ export const sendingOtpToPhone = async (
 ) => {
   try {
     const { phone_number } = req.body;
-    console.log(phone_number);
+    console.log("=== DRIVER SEND OTP START ===");
+    console.log("Phone number received:", phone_number);
+    console.log("TWILIO_ACCOUNT_SID:", process.env.TWILIO_ACCOUNT_SID ? "SET" : "NOT SET");
+    console.log("TWILIO_AUTH_TOKEN:", process.env.TWILIO_AUTH_TOKEN ? "SET" : "NOT SET");
+    console.log("TWILIO_SERVICE_SID:", process.env.TWILIO_SERVICE_SID ? "SET" : "NOT SET");
+
+    if (!process.env.TWILIO_ACCOUNT_SID || !process.env.TWILIO_AUTH_TOKEN || !process.env.TWILIO_SERVICE_SID) {
+      console.error("Twilio environment variables are not set properly");
+      return res.status(500).json({
+        success: false,
+        message: "Server configuration error: Twilio not configured"
+      });
+    }
+
+    // Check if driver exists in database
+    const driver = await prisma.driver.findUnique({
+      where: {
+        phone_number,
+      },
+    });
+
+    if (!driver) {
+      console.log("Driver not found in database for phone:", phone_number);
+      console.log("=== DRIVER SEND OTP END ===");
+      return res.status(400).json({
+        success: false,
+        message: "Driver not found. Please register first.",
+      });
+    }
+
     try {
-      await client.verify.v2
+      console.log("Attempting to send OTP to driver phone:", phone_number);
+      const verification = await client.verify.v2
         ?.services(process.env.TWILIO_SERVICE_SID!)
         .verifications.create({
           channel: "sms",
           to: phone_number,
         });
 
+      console.log("Twilio verification response:", verification);
+      console.log("OTP sent successfully to driver:", phone_number);
+      console.log("=== DRIVER SEND OTP END ===");
+
       res.status(201).json({
         success: true,
+        message: "OTP sent successfully"
       });
-    } catch (error) {
-      console.log(error);
+    } catch (error: any) {
+      console.error("=== DRIVER TWILIO ERROR ===");
+      console.error("Error sending OTP to driver:", error);
+      console.error("Error code:", error.code);
+      console.error("Error message:", error.message);
+      console.error("Error status:", error.status);
+      console.error("=== END DRIVER TWILIO ERROR ===");
+
       res.status(400).json({
         success: false,
+        message: error.message || "Failed to send OTP",
+        error: error.code || "UNKNOWN_ERROR"
       });
     }
-  } catch (error) {
-    console.log(error);
-    res.status(400).json({
+  } catch (error: any) {
+    console.error("=== GENERAL ERROR IN DRIVER SEND OTP ===");
+    console.error("Error:", error);
+    console.error("=== END GENERAL ERROR ===");
+
+    res.status(500).json({
       success: false,
+      message: "Internal server error"
     });
   }
 };
@@ -53,39 +100,80 @@ export const verifyPhoneOtpForLogin = async (
 ) => {
   try {
     const { phone_number, otp } = req.body;
+    console.log("=== DRIVER VERIFY OTP LOGIN START ===");
+    console.log("Phone number:", phone_number);
+    console.log("OTP received:", otp);
+
+    if (!process.env.TWILIO_ACCOUNT_SID || !process.env.TWILIO_AUTH_TOKEN || !process.env.TWILIO_SERVICE_SID) {
+      console.error("Twilio environment variables are not set properly");
+      return res.status(500).json({
+        success: false,
+        message: "Server configuration error: Twilio not configured"
+      });
+    }
 
     try {
-      await client.verify.v2
+      console.log("Verifying OTP with Twilio for driver login...");
+      const verificationCheck = await client.verify.v2
         .services(process.env.TWILIO_SERVICE_SID!)
         .verificationChecks.create({
           to: phone_number,
           code: otp,
         });
 
+      console.log("Twilio verification check response:", verificationCheck);
+      console.log("Verification status:", verificationCheck.status);
+
+      if (verificationCheck.status !== 'approved') {
+        console.log("OTP verification failed for driver login - status:", verificationCheck.status);
+        return res.status(400).json({
+          success: false,
+          message: "Invalid OTP",
+        });
+      }
+
+      console.log("OTP verified successfully, checking if driver exists in database...");
       const driver = await prisma.driver.findUnique({
         where: {
           phone_number,
         },
       });
+
       if (driver) {
-        sendToken(driver, res);
+        console.log("Driver found in database, sending token...");
+        console.log("Driver ID:", driver.id);
+        console.log("=== DRIVER VERIFY OTP LOGIN END ===");
+        await sendToken(driver, res);
       } else {
+        console.log("Driver not found in database for phone:", phone_number);
+        console.log("=== DRIVER VERIFY OTP LOGIN END ===");
         res.status(400).json({
           success: false,
           message: "Driver not found. Please register first.",
         });
       }
-    } catch (error) {
-      console.log(error);
+    } catch (error: any) {
+      console.error("=== DRIVER TWILIO VERIFICATION ERROR ===");
+      console.error("Error verifying OTP for driver login:", error);
+      console.error("Error code:", error.code);
+      console.error("Error message:", error.message);
+      console.error("Error status:", error.status);
+      console.error("=== END DRIVER TWILIO VERIFICATION ERROR ===");
+
       res.status(400).json({
         success: false,
-        message: "Something went wrong!",
+        message: error.message || "OTP verification failed",
+        error: error.code || "VERIFICATION_ERROR"
       });
     }
-  } catch (error) {
-    console.log(error);
-    res.status(400).json({
+  } catch (error: any) {
+    console.error("=== GENERAL ERROR IN DRIVER VERIFY OTP LOGIN ===");
+    console.error("Error:", error);
+    console.error("=== END GENERAL ERROR ===");
+
+    res.status(500).json({
       success: false,
+      message: "Internal server error"
     });
   }
 };
@@ -111,14 +199,41 @@ export const verifyPhoneOtpForRegistration = async (
       rate,
     } = req.body;
 
+    console.log("=== DRIVER VERIFY OTP REGISTRATION START ===");
+    console.log("Phone number:", phone_number);
+    console.log("OTP received:", otp);
+    console.log("Driver details - Name:", name, "Country:", country, "Email:", email);
+    console.log("Vehicle details - Type:", vehicle_type, "Reg Number:", registration_number);
+
+    if (!process.env.TWILIO_ACCOUNT_SID || !process.env.TWILIO_AUTH_TOKEN || !process.env.TWILIO_SERVICE_SID) {
+      console.error("Twilio environment variables are not set properly");
+      return res.status(500).json({
+        success: false,
+        message: "Server configuration error: Twilio not configured"
+      });
+    }
+
     try {
-      await client.verify.v2
+      console.log("Verifying OTP with Twilio for driver registration...");
+      const verificationCheck = await client.verify.v2
         .services(process.env.TWILIO_SERVICE_SID!)
         .verificationChecks.create({
           to: phone_number,
           code: otp,
         });
 
+      console.log("Twilio verification check response:", verificationCheck);
+      console.log("Verification status:", verificationCheck.status);
+
+      if (verificationCheck.status !== 'approved') {
+        console.log("OTP verification failed for driver registration - status:", verificationCheck.status);
+        return res.status(400).json({
+          success: false,
+          message: "Invalid OTP",
+        });
+      }
+
+      console.log("OTP verified successfully, creating new driver account...");
       const driver = await prisma.driver.create({
         data: {
           name,
@@ -130,147 +245,40 @@ export const verifyPhoneOtpForRegistration = async (
           registration_date,
           driving_license,
           vehicle_color,
-          rate: parseFloat(rate),
+          rate: rate.toString(),
         },
       });
-      sendToken(driver, res);
-    } catch (error) {
-      console.log(error);
+
+      console.log("Driver created successfully with ID:", driver.id);
+      console.log("=== DRIVER VERIFY OTP REGISTRATION END ===");
+      await sendToken(driver, res);
+    } catch (error: any) {
+      console.error("=== DRIVER TWILIO VERIFICATION ERROR ===");
+      console.error("Error verifying OTP for driver registration:", error);
+      console.error("Error code:", error.code);
+      console.error("Error message:", error.message);
+      console.error("Error status:", error.status);
+      console.error("=== END DRIVER TWILIO VERIFICATION ERROR ===");
+
       res.status(400).json({
         success: false,
-        message: "Something went wrong!",
+        message: error.message || "OTP verification failed",
+        error: error.code || "VERIFICATION_ERROR"
       });
     }
-  } catch (error) {
-    console.log(error);
-    res.status(400).json({
+  } catch (error: any) {
+    console.error("=== GENERAL ERROR IN DRIVER VERIFY OTP REGISTRATION ===");
+    console.error("Error:", error);
+    console.error("=== END GENERAL ERROR ===");
+
+    res.status(500).json({
       success: false,
+      message: "Internal server error"
     });
   }
 };
 
-// // sending otp to email
-// export const sendingOtpToEmail = async (req: Request, res: Response) => {
-//   try {
-//     const {
-//       name,
-//       country,
-//       phone_number,
-//       email,
-//       vehicle_type,
-//       registration_number,
-//       registration_date,
-//       driving_license,
-//       vehicle_color,
-//       rate,
-//     } = req.body;
 
-//     const otp = Math.floor(1000 + Math.random() * 9000).toString();
-
-//     const driver = {
-//       name,
-//       country,
-//       phone_number,
-//       email,
-//       vehicle_type,
-//       registration_number,
-//       registration_date,
-//       driving_license,
-//       vehicle_color,
-//       rate,
-//     };
-//     const token = jwt.sign(
-//       {
-//         driver,
-//         otp,
-//       },
-//       process.env.EMAIL_ACTIVATION_SECRET!,
-//       {
-//         expiresIn: "5m",
-//       }
-//     );
-//     try {
-//       await nylas.messages.send({
-//         identifier: process.env.USER_GRANT_ID!,
-//         requestBody: {
-//           to: [{ name: name, email: email }],
-//           subject: "Verify your email address!",
-//           body: `
-//             <p>Hi ${name},</p>
-//         <p>Your livebustracking verification code is ${otp}. If you didn't request for this OTP, please ignore this email!</p>
-//         <p>Thanks,<br>livebustracking Team</p>
-//             `,
-//         },
-//       });
-//       res.status(201).json({
-//         success: true,
-//         token,
-//       });
-//     } catch (error: any) {
-//       res.status(400).json({
-//         success: false,
-//         message: error.message,
-//       });
-//       console.log(error);
-//     }
-//   } catch (error) {
-//     console.log(error);
-//   }
-// };
-
-// // verifying email otp and creating driver account
-// export const verifyingEmailOtp = async (req: Request, res: Response) => {
-//   try {
-//     const { otp, token } = req.body;
-
-//     const newDriver: any = jwt.verify(
-//       token,
-//       process.env.EMAIL_ACTIVATION_SECRET!
-//     );
-
-//     if (newDriver.otp !== otp) {
-//       return res.status(400).json({
-//         success: false,
-//         message: "OTP is not correct or expired!",
-//       });
-//     }
-
-//     const {
-//       name,
-//       country,
-//       phone_number,
-//       email,
-//       vehicle_type,
-//       registration_number,
-//       registration_date,
-//       driving_license,
-//       vehicle_color,
-//       rate,
-//     } = newDriver.driver;
-
-//     const driver = await prisma.driver.create({
-//       data: {
-//         name,
-//         country,
-//         phone_number,
-//         email,
-//         vehicle_type,
-//         registration_number,
-//         registration_date,
-//         driving_license,
-//         vehicle_color,
-//         rate,
-//       },
-//     });
-//     sendToken(driver, res);
-//   } catch (error) {
-//     console.log(error);
-//     res.status(400).json({
-//       success: false,
-//       message: "Your otp is expired!",
-//     });
-//   }
-// };
 
 // register driver directly without OTP
 export const registerDriverDirectly = async (req: Request, res: Response) => {

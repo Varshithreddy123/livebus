@@ -1,4 +1,4 @@
-import { View, Text, ScrollView, ActivityIndicator } from "react-native";
+import { View, Text, ScrollView, ActivityIndicator, Image } from "react-native";
 import React, { useState } from "react";
 import { windowHeight, windowWidth } from "@/themes/app.constant";
 import ProgressBar from "@/components/common/progress.bar";
@@ -12,6 +12,7 @@ import color from "@/themes/app.colors";
 import { router, useLocalSearchParams } from "expo-router";
 import axios from "axios";
 import { Toast } from "react-native-toast-notifications";
+import Images from "@/utils/images";
 
 export default function DocumentVerificationScreen() {
   const driverData = useLocalSearchParams();
@@ -114,16 +115,16 @@ export default function DocumentVerificationScreen() {
     <ScrollView>
       <View>
         {/* App logo/title */}
-        <Text
+        <Image
+          source={Images.logo}
           style={{
-            fontFamily: "TT-Octosquares-Medium",
-            fontSize: windowHeight(22),
-            paddingTop: windowHeight(50),
-            textAlign: "center",
+            width: windowWidth(150),
+            height: windowHeight(50),
+            alignSelf: "center",
+            marginTop: windowHeight(50),
+            resizeMode: "contain",
           }}
-        >
-          Ride Wave
-        </Text>
+        />
 
         <View style={{ padding: windowWidth(20) }}>
           <ProgressBar fill={2} />

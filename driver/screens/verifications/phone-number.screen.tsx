@@ -20,61 +20,82 @@ export default function PhoneNumberVerificationScreen() {
   const [loader, setLoader] = useState(false);
 
   const handleSubmit = async () => {
+    console.log("=== DRIVER OTP VERIFICATION START ===");
+    console.log("OTP entered:", otp);
+    console.log("Driver phone number:", driver.phone_number);
+
     if (otp === "") {
+      console.log("Validation failed: Empty OTP");
       Toast.show("Please fill the fields!", {
         placement: "bottom",
       });
-    } else {
-      if (driver.name) {
-        setLoader(true);
-        const otpNumbers = `${otp}`;
-        await axios
-          .post(`${process.env.EXPO_PUBLIC_SERVER_URI}/driver/verify-otp`, {
-            phone_number: driver.phone_number,
-            otp: otpNumbers,
-            name: driver.name,
-            country: driver.country,
-            email: driver.email,
-            vehicle_type: driver.vehicle_type,
-            registration_number: driver.registration_number,
-            registration_date: driver.registration_date,
-            driving_license: driver.driving_license,
-            vehicle_color: driver.vehicle_color,
-            rate: driver.rate,
-          })
-          .then(async (res) => {
-            setLoader(false);
-            await AsyncStorage.setItem("accessToken", res.data.accessToken);
-            router.push("/(tabs)/home");
-          })
-          .catch((error) => {
-            setLoader(false);
-            Toast.show("Your otp is incorrect or expired!", {
-              placement: "bottom",
-              type: "danger",
-            });
-          });
+      console.log("=== DRIVER OTP VERIFICATION END (VALIDATION FAILED) ===");
+      return;
+    }
+
+    setLoader(true);
+    console.log("Loading state set to true");
+
+    const requestPayload = {
+      phone_number: driver.phone_number,
+      otp: otp,
+    };
+    console.log("Request payload:", requestPayload);
+    console.log("API endpoint:", `${process.env.EXPO_PUBLIC_SERVER_URI}/driver/login`);
+
+    try {
+      console.log("Making axios POST request for driver login...");
+      const response = await axios.post(
+        `${process.env.EXPO_PUBLIC_SERVER_URI}/driver/login`,
+        requestPayload
+      );
+
+      console.log("Axios request successful");
+      console.log("Response status:", response.status);
+      console.log("Response data:", response.data);
+
+      setLoader(false);
+      console.log("Loading state set to false");
+
+      if (response.data.accessToken) {
+        console.log("Access token received, saving to AsyncStorage...");
+        await AsyncStorage.setItem("accessToken", response.data.accessToken);
+        console.log("Access token saved successfully");
+
+        console.log("Navigating to driver home screen...");
+        router.replace("/(tabs)/home");
+        console.log("=== DRIVER OTP VERIFICATION END (SUCCESS) ===");
       } else {
-        setLoader(true);
-        const otpNumbers = `${otp}`;
-        await axios
-          .post(`${process.env.EXPO_PUBLIC_SERVER_URI}/driver/login`, {
-            phone_number: driver.phone_number,
-            otp: otpNumbers,
-          })
-          .then(async (res) => {
-            setLoader(false);
-            await AsyncStorage.setItem("accessToken", res.data.accessToken);
-            router.push("/(tabs)/home");
-          })
-          .catch((error) => {
-            setLoader(false);
-            Toast.show("Your otp is incorrect or expired!", {
-              placement: "bottom",
-              type: "danger",
-            });
-          });
+        console.log("No access token in response");
+        Toast.show("Login failed - no access token received", {
+          placement: "bottom",
+          type: "danger",
+        });
       }
+    } catch (error: any) {
+      console.log("=== DRIVER OTP VERIFICATION ERROR ===");
+      console.error("Error object:", error);
+      console.error("Error message:", error.message);
+      console.error("Error code:", error.code);
+      console.error("Error response:", error.response);
+      console.error("Error response status:", error.response?.status);
+      console.error("Error response data:", error.response?.data);
+      console.error("Error request:", error.request);
+
+      setLoader(false);
+      console.log("Loading state set to false");
+
+      const errorMessage = error.response?.data?.message ||
+                          error.message ||
+                          "Network error occurred";
+
+      console.log("Displaying error toast:", errorMessage);
+      Toast.show(errorMessage, {
+        placement: "bottom",
+        type: "danger",
+      });
+
+      console.log("=== DRIVER OTP VERIFICATION END (ERROR) ===");
     }
   };
   return (
@@ -100,6 +121,7 @@ export default function PhoneNumberVerificationScreen() {
               height={windowHeight(30)}
               onPress={() => handleSubmit()}
               disabled={loader}
+              loading={loader}
             />
           </View>
           <View style={[external.mb_15]}>

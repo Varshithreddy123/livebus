@@ -17,6 +17,7 @@ export type images = {
   bgDarkOnboard: ImageSourcePropType;
   authBgDark: ImageSourcePropType;
   bgOnboarding: ImageSourcePropType;
+  logo: ImageSourcePropType;
 };
 
 const Images: images = {
@@ -36,5 +37,6 @@ const Images: images = {
   bgDarkOnboard: require("../../assets/images/onBoarding/bgDarkOnboard.png"),
   authBgDark: require("../../assets/images/authImage/authBgDark.png"),
   bgOnboarding: require('../../assets/images/onBoarding/bgOnboarding.png'),
+  logo: require("../../assets/images/logo/logo.png"),
 };
 export default Images;
