@@ -41,7 +41,8 @@ export default function HomeScreen() {
               fontSize: 25,
             }}
           >
-            Live Bus Tracking
+            CHAKRAAgit commit -m "Your commit message here"
+
           </Text>
           <LocationSearchBar />
         </View>
