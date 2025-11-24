@@ -13,6 +13,7 @@ import { router, useLocalSearchParams } from "expo-router";
 import axios from "axios";
 import { Toast } from "react-native-toast-notifications";
 import Images from "@/utils/images";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 export default function DocumentVerificationScreen() {
   const driverData = useLocalSearchParams();
@@ -22,11 +23,12 @@ export default function DocumentVerificationScreen() {
 
   const [formData, setFormData] = useState({
     vehicleType: "Car",
-    registrationNumber: "",
+    vehicleNumber: "",
     registrationDate: "",
     drivingLicenseNumber: "",
     color: "",
     rate: "",
+    vehicleImage: "",
   });
 
   const handleChange = (key: string, value: string) => {
@@ -38,7 +40,7 @@ export default function DocumentVerificationScreen() {
 
   const handleSubmit = async () => {
     if (
-      !formData.registrationNumber ||
+      !formData.vehicleNumber ||
       !formData.registrationDate ||
       !formData.drivingLicenseNumber ||
       !formData.color ||
@@ -56,19 +58,23 @@ export default function DocumentVerificationScreen() {
       setLoading(true);
 
       const driver = {
-        ...driverData,
+        name: driverData.name,
+        country: driverData.country,
+        phone_number: driverData.phone_number,
+        email: driverData.email,
         vehicle_type: formData.vehicleType,
-        registration_number: formData.registrationNumber,
+        vehicleNumber: formData.vehicleNumber,
         registration_date: formData.registrationDate,
         driving_license: formData.drivingLicenseNumber,
         vehicle_color: formData.color,
         rate: formData.rate,
+        vehicleImage: formData.vehicleImage,
       };
 
       console.log("Sending data to:", process.env.EXPO_PUBLIC_SERVER_URI);
       console.log("Driver payload:", driver);
 
-      await axios.post(
+      const res = await axios.post(
         `${process.env.EXPO_PUBLIC_SERVER_URI}/driver/register-driver`,
         {
           name: driver.name,
@@ -76,7 +82,7 @@ export default function DocumentVerificationScreen() {
           phone_number: driver.phone_number,
           email: driver.email,
           vehicle_type: formData.vehicleType,
-          registration_number: formData.registrationNumber,
+          registration_number: formData.vehicleNumber,
           registration_date: formData.registrationDate,
           driving_license: formData.drivingLicenseNumber,
           vehicle_color: formData.color,
@@ -84,18 +90,36 @@ export default function DocumentVerificationScreen() {
         }
       );
 
+      // store token and set status active
+      const accessToken = res?.data?.accessToken;
+      if (accessToken) {
+        await AsyncStorage.setItem("accessToken", accessToken);
+        try {
+          await axios.put(
+            `${process.env.EXPO_PUBLIC_SERVER_URI}/driver/update-status`,
+            { status: "active" },
+            {
+              headers: {
+                Authorization: `Bearer ${accessToken}`,
+              },
+            }
+          );
+          await AsyncStorage.setItem("status", "active");
+        } catch (e) {
+          // Non-fatal: status can still be toggled in Home
+          console.warn("Failed to set status active immediately", e);
+        }
+      }
+
       setLoading(false);
 
-      // ✅ Show success toast before redirecting
       Toast.show("Driver registered successfully!", {
         placement: "bottom",
         type: "success",
-        duration: 2000, // 2 seconds before redirect
-        onHide: () => {
-          // ✅ Redirect after toast disappears
-          router.replace("/(routes)/login");
-        },
+        duration: 1000,
       });
+
+      router.replace("/(tabs)/home");
     } catch (error: any) {
       setLoading(false);
       console.error("Driver registration error:", error);
@@ -150,16 +174,15 @@ export default function DocumentVerificationScreen() {
               />
 
               <Input
-                title="Registration Number"
-                placeholder="Enter your vehicle registration number"
+                title="Vehicle Number"
+                placeholder="Enter your vehicle number"
                 keyboardType="default"
-                autoCapitalize="characters"
-                value={formData.registrationNumber}
+                value={formData.vehicleNumber}
                 onChangeText={(text) =>
-                  handleChange("registrationNumber", text)
+                  handleChange("vehicleNumber", text)
                 }
-                showWarning={showWarning && formData.registrationNumber === ""}
-                warning="Please enter your vehicle registration number!"
+                showWarning={showWarning && formData.vehicleNumber === ""}
+                warning="Please enter your vehicle number!"
               />
 
               <Input
@@ -175,7 +198,6 @@ export default function DocumentVerificationScreen() {
                 title="Driving License Number"
                 placeholder="Enter your driving license number"
                 keyboardType="default"
-                autoCapitalize="characters"
                 value={formData.drivingLicenseNumber}
                 onChangeText={(text) =>
                   handleChange("drivingLicenseNumber", text)

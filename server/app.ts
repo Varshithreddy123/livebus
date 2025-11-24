@@ -4,6 +4,7 @@ import cookieParser from "cookie-parser";
 import userRouter from "./routes/user.route";
 import Nylas from "nylas";
 import driverRouter from "./routes/driver.route";
+import os from "os";
 
 export const app = express();
 
@@ -21,6 +22,20 @@ app.use(cookieParser());
 // routes
 app.use("/api/v1", userRouter);
 app.use("/api/v1/driver", driverRouter);
+
+// dynamic server IP endpoint
+app.get("/api/v1/server-ip", (req: Request, res: Response) => {
+  const nets = os.networkInterfaces();
+  let ip = "";
+  for (const name of Object.keys(nets)) {
+    for (const net of nets[name] || []) {
+      if (net.family === "IPv4" && !net.internal) {
+        ip = net.address;
+      }
+    }
+  }
+  res.json({ ip });
+});
 
 // testing api
 app.get("/test", (req: Request, res: Response, next: NextFunction) => {

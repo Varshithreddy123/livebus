@@ -64,6 +64,7 @@ const color: Color = {
   iconRed: "#FEEBEB",
   darkBorder: "#474747",
   selectPrimary: "#E8F4F1",
+  greyColor: "#A9A9A9",
 };
 
 export default color;

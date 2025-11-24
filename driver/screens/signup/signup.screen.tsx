@@ -17,12 +17,13 @@ export default function SignupScreen() {
   const { colors } = useTheme();
   const [emailFormatWarning, setEmailFormatWarning] = useState("");
   const [showWarning, setShowWarning] = useState(false);
-  const [formData, setFormData] = useState({
-    name: "",
-    phoneNumber: "",
-    email: "",
-    country: "INDIA IND",
-  });
+const [formData, setFormData] = useState({
+  name: "",
+  phoneNumber: "",
+  email: "",
+  country: "🇮🇳 India",
+});
+
 
   const handleChange = (key: string, value: string) => {
     setFormData((prevData) => ({
@@ -64,16 +65,7 @@ export default function SignupScreen() {
     <ScrollView>
       <View>
         {/* logo */}
-        <Image
-          source={Images.logo}
-          style={{
-            width: windowWidth(150),
-            height: windowHeight(50),
-            alignSelf: "center",
-            marginTop: windowHeight(50),
-            resizeMode: "contain",
-          }}
-        />
+        
         <View style={{ padding: windowWidth(20) }}>
           <ProgressBar fill={1} />
           <View
@@ -82,7 +74,7 @@ export default function SignupScreen() {
             <View style={styles.space}>
               <TitleView
                 title={"Create your account"}
-                subTitle={"Explore your life by joining Ride Wave"}
+                subTitle={"Explore your life by joining Chakraa"}
               />
               <Input
                 title="Name"

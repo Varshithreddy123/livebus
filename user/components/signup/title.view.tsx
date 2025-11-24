@@ -13,24 +13,27 @@ export default function TitleView({ title, subTitle }: TitleViewProps) {
   const { colors } = useTheme();
 
   return (
-    <View>
-      <Text style={[styles.main, { color: colors.text }]}>{title}</Text>
-      <Text style={[styles.sub]}>{subTitle}</Text>
+    <View style={{ marginBottom: windowHeight(12) }}>
+      <Text style={[styles.title, { color: colors.text }]}>{title}</Text>
+
+      <Text style={styles.subtitle}>
+        {subTitle}
+      </Text>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  main: {
-    fontSize: fontSizes.FONT30,
-    fontFamily: fonts.medium,
-    marginTop: windowHeight(2),
+  title: {
+    fontSize: fontSizes.FONT28,
+    fontFamily: fonts.semiBold,
+    marginBottom: windowHeight(1),
+    letterSpacing: 0.2,
   },
-  sub: {
+  subtitle: {
     color: color.secondaryFont,
-    marginTop: windowHeight(0.6),
-    fontSize: fontSizes.FONT20,
+    fontSize: fontSizes.FONT18,
     fontFamily: fonts.medium,
-    marginBottom: windowHeight(2),
+    lineHeight: 22,
   },
 });

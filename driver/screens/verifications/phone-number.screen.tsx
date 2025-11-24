@@ -19,14 +19,43 @@ export default function PhoneNumberVerificationScreen() {
   const [otp, setOtp] = useState("");
   const [loader, setLoader] = useState(false);
 
+  const handleResendOtp = async () => {
+    console.log("=== DRIVER RESEND OTP START ===");
+    console.log("Resending OTP to:", driver.phone_number);
+
+    try {
+      const response = await axios.post(
+        `${process.env.EXPO_PUBLIC_SERVER_URI}/driver/send-otp`,
+        {
+          phone_number: driver.phone_number,
+        }
+      );
+
+      console.log("Resend OTP response:", response.data);
+      Toast.show("OTP resent successfully!", {
+        placement: "bottom",
+        type: "success",
+      });
+      console.log("=== DRIVER RESEND OTP END (SUCCESS) ===");
+    } catch (error: any) {
+      console.error("=== DRIVER RESEND OTP ERROR ===");
+      console.error("Error:", error);
+      Toast.show("Failed to resend OTP. Please try again.", {
+        placement: "bottom",
+        type: "danger",
+      });
+      console.log("=== DRIVER RESEND OTP END (ERROR) ===");
+    }
+  };
+
   const handleSubmit = async () => {
     console.log("=== DRIVER OTP VERIFICATION START ===");
     console.log("OTP entered:", otp);
     console.log("Driver phone number:", driver.phone_number);
 
-    if (otp === "") {
-      console.log("Validation failed: Empty OTP");
-      Toast.show("Please fill the fields!", {
+    if (otp === "" || otp.length !== 4) {
+      console.log("Validation failed: Empty or invalid OTP");
+      Toast.show("Please enter a valid 4-digit OTP!", {
         placement: "bottom",
       });
       console.log("=== DRIVER OTP VERIFICATION END (VALIDATION FAILED) ===");
@@ -137,7 +166,7 @@ export default function PhoneNumberVerificationScreen() {
               ]}
             >
               <Text style={[commonStyles.regularText]}>Not Received yet?</Text>
-              <TouchableOpacity>
+              <TouchableOpacity onPress={handleResendOtp}>
                 <Text style={[style.signUpText, { color: "#000" }]}>
                   Resend it
                 </Text>

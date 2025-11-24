@@ -6,26 +6,32 @@ export const useGetDriverData = () => {
   const [driver, setDriver] = useState<DriverType>();
   const [loading, setLoading] = useState(true);
 
+  const getLoggedInDriverData = async () => {
+    const accessToken = await AsyncStorage.getItem("accessToken");
+    await axios
+      .get(`${process.env.EXPO_PUBLIC_SERVER_URI}/driver/me`, {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+      })
+      .then((res) => {
+        setDriver(res.data.driver);
+        setLoading(false);
+      })
+      .catch((error) => {
+        console.log(error);
+        setLoading(false);
+      });
+  };
+
   useEffect(() => {
-    const getLoggedInDriverData = async () => {
-      const accessToken = await AsyncStorage.getItem("accessToken");
-      await axios
-        .get(`${process.env.EXPO_PUBLIC_SERVER_URI}/driver/me`, {
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
-          },
-        })
-        .then((res) => {
-          setDriver(res.data.driver);
-          setLoading(false);
-        })
-        .catch((error) => {
-          console.log(error);
-          setLoading(false);
-        });
-    };
     getLoggedInDriverData();
   }, []);
 
-  return { loading, driver };
+  const refetch = () => {
+    setLoading(true);
+    getLoggedInDriverData();
+  };
+
+  return { loading, driver, refetch };
 };

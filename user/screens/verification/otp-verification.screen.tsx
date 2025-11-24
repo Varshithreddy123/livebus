@@ -35,8 +35,8 @@ export default function OtpverificationScreen() {
 
   // --- 2️⃣ Verify OTP Logic ---
   const handleVerifyOTP = async () => {
-    if (!otp || otp.length !== 6) {
-      toast.show('Please enter a valid 6-digit OTP', { placement: "bottom" });
+    if (!otp || otp.length !== 4) {
+      toast.show('Please enter a valid 4-digit OTP', { placement: "bottom" });
       return;
     }
 
@@ -49,7 +49,7 @@ export default function OtpverificationScreen() {
     try {
       setLoading(true);
       console.log("Verifying OTP:", otp, "for phone:", phoneNumber);
-      console.log("API URL:", `${process.env.EXPO_PUBLIC_SERVER_URI}/api/v1/verify-otp`);
+      console.log("API URL:", `${process.env.EXPO_PUBLIC_SERVER_URI}/verify-otp`);
 
       // Log the request payload for debugging
       const payload = {
@@ -58,7 +58,7 @@ export default function OtpverificationScreen() {
       };
       console.log("Verification payload:", payload);
 
-      const response = await api.post(`${process.env.EXPO_PUBLIC_SERVER_URI}/api/v1/verify-otp`, payload);
+      const response = await api.post(`${process.env.EXPO_PUBLIC_SERVER_URI}/verify-otp`, payload);
 
       console.log("OTP Verification Response:", response.data);
 
@@ -80,8 +80,8 @@ if (response.data && response.data.user) {
       params: { userId: response.data.user.id }
     });
   } else {
-    // Existing user, go to home
-    toast.show('Account verified successfully', { placement: "bottom" });
+    // Existing user, go to home directly
+    toast.show('Welcome back! Account verified successfully', { placement: "bottom" });
     router.replace({ pathname: "/(tabs)/home" });
   }
 } else {
@@ -118,7 +118,7 @@ if (response.data && response.data.user) {
     try {
       setLoading(true);
       console.log("Resending OTP to:", phoneNumber);
-      const response = await api.post(`${process.env.EXPO_PUBLIC_SERVER_URI}/api/v1/resend-otp`, {
+      const response = await api.post(`${process.env.EXPO_PUBLIC_SERVER_URI}/resend-otp`, {
         phone_number: phoneNumber,
       });
       console.log("OTP Resent:", response.data);
@@ -156,7 +156,7 @@ if (response.data && response.data.user) {
               console.log("OTP entered:", code);
               setOtp(code);
             }}
-            inputCount={6}
+            inputCount={4}
             textInputStyle={style.otpTextInput}
             tintColor={color.subtitle}
             autoFocus

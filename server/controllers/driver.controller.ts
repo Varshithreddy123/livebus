@@ -11,6 +11,57 @@ const client = twilio(accountSid, authToken, {
   lazyLoading: true,
 });
 
+// Helper function to check Twilio configuration
+const checkTwilioConfig = (res: Response) => {
+  if (!process.env.TWILIO_ACCOUNT_SID || !process.env.TWILIO_AUTH_TOKEN || !process.env.TWILIO_SERVICE_SID) {
+    console.error("Twilio environment variables are not set properly");
+    res.status(500).json({
+      success: false,
+      message: "Server configuration error: Twilio not configured"
+    });
+    return false;
+  }
+  return true;
+};
+
+// Helper function to verify OTP with Twilio
+const verifyOtp = async (phone_number: string, otp: string) => {
+  const verificationCheck = await client.verify.v2
+    .services(process.env.TWILIO_SERVICE_SID!)
+    .verificationChecks.create({
+      to: phone_number,
+      code: otp,
+    });
+  return verificationCheck;
+};
+
+// Helper function to create driver data object
+const createDriverData = (data: {
+  name: string;
+  country: string;
+  phone_number: string;
+  email: string;
+  vehicle_type: any;
+  registration_number: string;
+  registration_date: string;
+  driving_license: string;
+  vehicle_color: string;
+  rate: any;
+}) => {
+  return {
+    name: data.name,
+    country: data.country,
+    phone_number: data.phone_number,
+    email: data.email,
+    vehicle_type: data.vehicle_type,
+    registration_number: data.registration_number,
+    registration_date: data.registration_date,
+    driving_license: data.driving_license,
+    vehicle_color: data.vehicle_color,
+    rate: data.rate.toString(),
+  };
+};
+
 // sending otp to driver phone number
 export const sendingOtpToPhone = async (
   req: Request,
@@ -25,13 +76,7 @@ export const sendingOtpToPhone = async (
     console.log("TWILIO_AUTH_TOKEN:", process.env.TWILIO_AUTH_TOKEN ? "SET" : "NOT SET");
     console.log("TWILIO_SERVICE_SID:", process.env.TWILIO_SERVICE_SID ? "SET" : "NOT SET");
 
-    if (!process.env.TWILIO_ACCOUNT_SID || !process.env.TWILIO_AUTH_TOKEN || !process.env.TWILIO_SERVICE_SID) {
-      console.error("Twilio environment variables are not set properly");
-      return res.status(500).json({
-        success: false,
-        message: "Server configuration error: Twilio not configured"
-      });
-    }
+    if (!checkTwilioConfig(res)) return;
 
     // Check if driver exists in database
     const driver = await prisma.driver.findUnique({
@@ -104,22 +149,11 @@ export const verifyPhoneOtpForLogin = async (
     console.log("Phone number:", phone_number);
     console.log("OTP received:", otp);
 
-    if (!process.env.TWILIO_ACCOUNT_SID || !process.env.TWILIO_AUTH_TOKEN || !process.env.TWILIO_SERVICE_SID) {
-      console.error("Twilio environment variables are not set properly");
-      return res.status(500).json({
-        success: false,
-        message: "Server configuration error: Twilio not configured"
-      });
-    }
+    if (!checkTwilioConfig(res)) return;
 
     try {
       console.log("Verifying OTP with Twilio for driver login...");
-      const verificationCheck = await client.verify.v2
-        .services(process.env.TWILIO_SERVICE_SID!)
-        .verificationChecks.create({
-          to: phone_number,
-          code: otp,
-        });
+      const verificationCheck = await verifyOtp(phone_number, otp);
 
       console.log("Twilio verification check response:", verificationCheck);
       console.log("Verification status:", verificationCheck.status);
@@ -147,9 +181,9 @@ export const verifyPhoneOtpForLogin = async (
       } else {
         console.log("Driver not found in database for phone:", phone_number);
         console.log("=== DRIVER VERIFY OTP LOGIN END ===");
-        res.status(400).json({
+        res.status(403).json({
           success: false,
-          message: "Driver not found. Please register first.",
+          message: "Register first",
         });
       }
     } catch (error: any) {
@@ -205,22 +239,11 @@ export const verifyPhoneOtpForRegistration = async (
     console.log("Driver details - Name:", name, "Country:", country, "Email:", email);
     console.log("Vehicle details - Type:", vehicle_type, "Reg Number:", registration_number);
 
-    if (!process.env.TWILIO_ACCOUNT_SID || !process.env.TWILIO_AUTH_TOKEN || !process.env.TWILIO_SERVICE_SID) {
-      console.error("Twilio environment variables are not set properly");
-      return res.status(500).json({
-        success: false,
-        message: "Server configuration error: Twilio not configured"
-      });
-    }
+    if (!checkTwilioConfig(res)) return;
 
     try {
       console.log("Verifying OTP with Twilio for driver registration...");
-      const verificationCheck = await client.verify.v2
-        .services(process.env.TWILIO_SERVICE_SID!)
-        .verificationChecks.create({
-          to: phone_number,
-          code: otp,
-        });
+      const verificationCheck = await verifyOtp(phone_number, otp);
 
       console.log("Twilio verification check response:", verificationCheck);
       console.log("Verification status:", verificationCheck.status);
@@ -235,7 +258,7 @@ export const verifyPhoneOtpForRegistration = async (
 
       console.log("OTP verified successfully, creating new driver account...");
       const driver = await prisma.driver.create({
-        data: {
+        data: createDriverData({
           name,
           country,
           phone_number,
@@ -245,8 +268,8 @@ export const verifyPhoneOtpForRegistration = async (
           registration_date,
           driving_license,
           vehicle_color,
-          rate: rate.toString(),
-        },
+          rate,
+        }),
       });
 
       console.log("Driver created successfully with ID:", driver.id);
@@ -297,25 +320,22 @@ export const registerDriverDirectly = async (req: Request, res: Response) => {
     } = req.body;
 
     const driver = await prisma.driver.create({
-      data: {
+      data: createDriverData({
         name,
         country,
         phone_number,
         email,
-        vehicle_type: vehicle_type as any,
+        vehicle_type,
         registration_number,
         registration_date,
         driving_license,
         vehicle_color,
         rate,
-      },
+      }),
     });
 
-    res.status(201).json({
-      success: true,
-      message: "Driver registered successfully!",
-      driver,
-    });
+    // Immediately authenticate driver after registration (bypass email verification)
+    await sendToken(driver, res);
   } catch (error: any) {
     console.log(error);
     res.status(400).json({
@@ -344,6 +364,14 @@ export const updateDriverStatus = async (req: any, res: Response) => {
   try {
     const { status } = req.body;
 
+    // Validate status
+    if (!status || !['active', 'inactive'].includes(status)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid status. Must be 'active' or 'inactive'.",
+      });
+    }
+
     const driver = await prisma.driver.update({
       where: {
         id: req.driver.id!,
@@ -365,25 +393,32 @@ export const updateDriverStatus = async (req: any, res: Response) => {
   }
 };
 
-// get drivers data with id
+// get drivers data with id or all active drivers if no ids
 export const getDriversById = async (req: Request, res: Response) => {
   try {
     const { ids } = req.query as any;
     console.log(ids,'ids')
+
+    let drivers;
     if (!ids) {
-      return res.status(400).json({ message: "No driver IDs provided" });
+      // Return all active drivers
+      drivers = await prisma.driver.findMany({
+        where: {
+          status: "active",
+        },
+      });
+    } else {
+      const driverIds = ids.split(",");
+
+      // Fetch drivers from database
+      drivers = await prisma.driver.findMany({
+        where: {
+          id: { in: driverIds },
+        },
+      });
     }
 
-    const driverIds = ids.split(",");
-
-    // Fetch drivers from database
-    const drivers = await prisma.driver.findMany({
-      where: {
-        id: { in: driverIds },
-      },
-    });
-
-    res.json(drivers);
+    res.json({ drivers });
   } catch (error) {
     console.error("Error fetching driver data:", error);
     res.status(500).json({ message: "Internal server error" });
@@ -493,6 +528,34 @@ export const updatingRideStatus = async (req: any, res: Response) => {
   }
 };
 
+// update driver location
+export const updateDriverLocation = async (req: any, res: Response) => {
+  try {
+    const { latitude, longitude } = req.body;
+
+    const driver = await prisma.driver.update({
+      where: {
+        id: req.driver.id,
+      },
+      data: {
+        latitude,
+        longitude,
+      },
+    });
+
+    res.status(200).json({
+      success: true,
+      driver,
+    });
+  } catch (error: any) {
+    console.log(error);
+    res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
+
 // getting drivers rides
 export const getAllRides = async (req: any, res: Response) => {
   const rides = await prisma.rides.findMany({
@@ -507,4 +570,180 @@ export const getAllRides = async (req: any, res: Response) => {
   res.status(201).json({
     rides,
   });
+};
+
+// update driver profile
+export const updateDriverProfile = async (req: any, res: Response) => {
+  try {
+    const { name } = req.body;
+
+    if (!name || name.trim() === "") {
+      return res.status(400).json({
+        success: false,
+        message: "Name is required",
+      });
+    }
+
+    const driver = await prisma.driver.update({
+      where: {
+        id: req.driver.id,
+      },
+      data: {
+        name: name.trim(),
+      },
+    });
+
+    res.status(200).json({
+      success: true,
+      message: "Profile updated successfully",
+      driver,
+    });
+  } catch (error: any) {
+    console.error("Error updating driver profile:", error);
+    res.status(500).json({
+      success: false,
+      message: error.message || "Internal server error",
+    });
+  }
+};
+
+// accept ride request
+export const acceptRide = async (req: any, res: Response) => {
+  try {
+    const { rideId } = req.body;
+    const driverId = req.driver?.id;
+
+    if (!rideId) {
+      return res.status(400).json({
+        success: false,
+        message: "Ride ID is required",
+      });
+    }
+
+    const ride = await prisma.rides.findUnique({
+      where: {
+        id: rideId,
+      },
+    });
+
+    if (!ride) {
+      return res.status(404).json({
+        success: false,
+        message: "Ride not found",
+      });
+    }
+
+    if (ride.driverId !== driverId) {
+      return res.status(403).json({
+        success: false,
+        message: "You are not assigned to this ride",
+      });
+    }
+
+    const updatedRide = await prisma.rides.update({
+      where: {
+        id: rideId,
+      },
+      data: {
+        status: "Accepted",
+      },
+    });
+
+    res.status(200).json({
+      success: true,
+      ride: updatedRide,
+      message: "Ride accepted successfully",
+    });
+  } catch (error: any) {
+    console.error("Error accepting ride:", error);
+    res.status(500).json({
+      success: false,
+      message: "Internal server error",
+    });
+  }
+};
+
+// reject ride request
+export const rejectRide = async (req: any, res: Response) => {
+  try {
+    const { rideId } = req.body;
+    const driverId = req.driver?.id;
+
+    if (!rideId) {
+      return res.status(400).json({
+        success: false,
+        message: "Ride ID is required",
+      });
+    }
+
+    const ride = await prisma.rides.findUnique({
+      where: {
+        id: rideId,
+      },
+    });
+
+    if (!ride) {
+      return res.status(404).json({
+        success: false,
+        message: "Ride not found",
+      });
+    }
+
+    if (ride.driverId !== driverId) {
+      return res.status(403).json({
+        success: false,
+        message: "You are not assigned to this ride",
+      });
+    }
+
+    const updatedRide = await prisma.rides.update({
+      where: {
+        id: rideId,
+      },
+      data: {
+        status: "Rejected",
+      },
+    });
+
+    res.status(200).json({
+      success: true,
+      ride: updatedRide,
+      message: "Ride rejected successfully",
+    });
+  } catch (error: any) {
+    console.error("Error rejecting ride:", error);
+    res.status(500).json({
+      success: false,
+      message: "Internal server error",
+    });
+  }
+};
+
+// check vehicle availability for service
+export const checkVehicleAvailability = async (req: Request, res: Response) => {
+  try {
+    const availableVehicles = await prisma.driver.count({
+      where: {
+        status: "active",
+        vehicle_type: {
+          not: null,
+        },
+        vehicleNumber: {
+          not: null,
+        },
+      },
+    });
+
+    res.status(200).json({
+      success: true,
+      vehiclesAvailable: availableVehicles > 0,
+      count: availableVehicles,
+    });
+  } catch (error: any) {
+    console.error("Error checking vehicle availability:", error);
+    res.status(500).json({
+      success: false,
+      message: "Internal server error",
+    });
+  }
 };

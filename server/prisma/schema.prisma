@@ -7,61 +7,92 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model user {
-  id                String   @id @default(auto()) @map("_id") @db.ObjectId
-  name              String?
-  phone_number      String   @unique
-  email             String?  // optional email
-  notificationToken String?
-  ratings           Float    @default(0)
-  totalRides        Float    @default(0)
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
-  rides             rides[]  @relation("UserRides")
+model BusStand {
+  id String @id @default(auto()) @map("_id") @db.ObjectId
 }
 
-enum VehicleType {
-  Car
-  Motorcycle
-  CNG
+model Route {
+  id String @id @default(auto()) @map("_id") @db.ObjectId
+}
+
+model RouteStop {
+  id         String @id @default(auto()) @map("_id") @db.ObjectId
+  busStandId String? @db.ObjectId
+  routeId    String? @db.ObjectId
+
+
+  @@unique([routeId, busStandId])
 }
 
 model driver {
-  id                  String      @id @default(auto()) @map("_id") @db.ObjectId
+  id                  String   @id @default(auto()) @map("_id") @db.ObjectId
+
   name                String
   country             String
-  phone_number        String      @unique
-  email               String?     // optional email
-  vehicle_type        VehicleType
-  registration_number String      @unique
-  registration_date   String
-  driving_license     String
+  phone_number        String?   @unique
+  email               String
+
+  vehicle_type        String?
   vehicle_color       String?
-  rate                String
-  notificationToken   String?
-  ratings             Float       @default(0)
-  totalEarning        Float       @default(0)
-  totalRides          Float       @default(0)
-  pendingRides        Float       @default(0)
-  cancelRides         Float       @default(0)
-  status              String      @default("inactive")
-  createdAt           DateTime    @default(now())
-  updatedAt           DateTime    @updatedAt
-  rides               rides[]     @relation("DriverRides")
+  vehicleNumber       String?
+  vehicleImage        String?
+
+  registration_number String?   @unique
+  registration_date   String?
+
+  driving_license     String?
+  rate                String?
+  rating              Float?    @default(0)
+  ratings             Float?    @default(0)
+
+  totalEarning        Float     @default(0)
+  totalRides          Float     @default(0)
+  pendingRides        Float     @default(0)
+  cancelRides         Float     @default(0)
+  status              String    @default("inactive")
+
+  latitude            Float?
+  longitude           Float?
+
+  // Back-relations
+  rides               rides[] @relation("DriverRides")
+
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
 }
+
+
 
 model rides {
   id                      String   @id @default(auto()) @map("_id") @db.ObjectId
-  userId                  String   @db.ObjectId
-  driverId                String   @db.ObjectId
-  charge                  Float
-  currentLocationName     String
-  destinationLocationName String
-  distance                String
-  status                  String
-  rating                  Float?
-  user                    user     @relation("UserRides", fields: [userId], references: [id])
-  driver                  driver   @relation("DriverRides", fields: [driverId], references: [id])
+  userId                  String?  @db.ObjectId
+  driverId                String?  @db.ObjectId
+  charge                  Float?
+  status                  String?
+  currentLocationName     String?
+  destinationLocationName String?
+  distance                Float?
+
+  // Relations
+  user   user?   @relation("UserRides", fields: [userId], references: [id])
+  driver driver? @relation("DriverRides", fields: [driverId], references: [id])
+
   createdAt               DateTime @default(now())
   updatedAt               DateTime @updatedAt
+}
+
+model user {
+  id           String    @id @default(auto()) @map("_id") @db.ObjectId
+  name         String?
+  email        String?
+  cratedAt     DateTime? @db.Date
+  createdAt    DateTime? @db.Date
+  phoneNumber  String?
+  phone_number String?   @unique
+  ratings      Float?
+  totalRides   Float
+  updatedAt    DateTime  @db.Date
+
+  // Back-relations
+  rides        rides[] @relation("UserRides")
 }

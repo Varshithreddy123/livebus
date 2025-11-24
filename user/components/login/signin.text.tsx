@@ -11,24 +11,36 @@ export default function SignInText({
   subtitle?: string;
 }) {
   return (
-    <>
+    <View style={{ marginTop: 20 }}>
       <Text
         style={[
           commonStyles.regularTextBigBlack,
-          { color: "#000" },
-          { textAlign: "left" },
-          { marginTop: 20 },
+          {
+            color: "#000",
+            textAlign: "left",
+            fontWeight: "700",
+            letterSpacing: 0.3,
+          },
         ]}
       >
-        {title ? title : "Join to take your ride 😃"}
+        {title || "Sign in to continue"}
       </Text>
+
       <Text
-        style={[commonStyles.regularText, external.pt_4, { textAlign: "left" }]}
+        style={[
+          commonStyles.regularText,
+          external.pt_4,
+          {
+            textAlign: "left",
+            color: "#444",
+            fontSize: 15,
+            lineHeight: 22,
+          },
+        ]}
       >
-        {subtitle
-          ? subtitle
-          : "Enter your phone number, get one otp and let's go 😍"}
+        {subtitle ||
+          "Enter your phone number to verify your identity and access ride services."}
       </Text>
-    </>
+    </View>
   );
 }

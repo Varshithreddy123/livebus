@@ -34,12 +34,15 @@ export const registerUser = async (
     }
 
     try {
-      console.log("Attempting to send OTP to:", phone_number);
+      // Ensure phone number is in E.164 format
+      const formattedPhoneNumber = phone_number.startsWith('+') ? phone_number : `+${phone_number}`;
+      console.log("Attempting to send OTP to:", formattedPhoneNumber);
       const verification = await client.verify.v2
         ?.services(process.env.TWILIO_SERVICE_SID!)
         .verifications.create({
           channel: "sms",
-          to: phone_number,
+          to: formattedPhoneNumber,
+          codeLength: 4,
         });
 
       console.log("Twilio verification response:", verification);
@@ -76,6 +79,74 @@ export const registerUser = async (
   }
 };
 
+// resend otp
+export const resendOtp = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const { phone_number } = req.body;
+    console.log("=== RESEND OTP START ===");
+    console.log("Phone number received:", phone_number);
+    console.log("TWILIO_ACCOUNT_SID:", process.env.TWILIO_ACCOUNT_SID ? "SET" : "NOT SET");
+    console.log("TWILIO_AUTH_TOKEN:", process.env.TWILIO_AUTH_TOKEN ? "SET" : "NOT SET");
+    console.log("TWILIO_SERVICE_SID:", process.env.TWILIO_SERVICE_SID ? "SET" : "NOT SET");
+
+    if (!process.env.TWILIO_ACCOUNT_SID || !process.env.TWILIO_AUTH_TOKEN || !process.env.TWILIO_SERVICE_SID) {
+      console.error("Twilio environment variables are not set properly");
+      return res.status(500).json({
+        success: false,
+        message: "Server configuration error: Twilio not configured"
+      });
+    }
+
+    try {
+      // Ensure phone number is in E.164 format
+      const formattedPhoneNumber = phone_number.startsWith('+') ? phone_number : `+${phone_number}`;
+      console.log("Attempting to resend OTP to:", formattedPhoneNumber);
+      const verification = await client.verify.v2
+        ?.services(process.env.TWILIO_SERVICE_SID!)
+        .verifications.create({
+          channel: "sms",
+          to: formattedPhoneNumber,
+          codeLength: 4,
+        });
+
+      console.log("Twilio verification response:", verification);
+      console.log("OTP resent successfully to:", phone_number);
+      console.log("=== RESEND OTP END ===");
+
+      res.status(201).json({
+        success: true,
+        message: "OTP resent successfully"
+      });
+    } catch (error: any) {
+      console.error("=== TWILIO RESEND ERROR ===");
+      console.error("Error resending OTP:", error);
+      console.error("Error code:", error.code);
+      console.error("Error message:", error.message);
+      console.error("Error status:", error.status);
+      console.error("=== END TWILIO RESEND ERROR ===");
+
+      res.status(400).json({
+        success: false,
+        message: error.message || "Failed to resend OTP",
+        error: error.code || "UNKNOWN_ERROR"
+      });
+    }
+  } catch (error: any) {
+    console.error("=== GENERAL ERROR IN RESEND OTP ===");
+    console.error("Error:", error);
+    console.error("=== END GENERAL ERROR ===");
+
+    res.status(500).json({
+      success: false,
+      message: "Internal server error"
+    });
+  }
+};
+
 // verify otp
 export const verifyOtp = async (
   req: Request,
@@ -97,11 +168,13 @@ export const verifyOtp = async (
     }
 
     try {
-      console.log("Verifying OTP with Twilio...");
+      // Ensure phone number is in E.164 format
+      const formattedPhoneNumber = phone_number.startsWith('+') ? phone_number : `+${phone_number}`;
+      console.log("Verifying OTP with Twilio for:", formattedPhoneNumber);
       const verificationCheck = await client.verify.v2
         .services(process.env.TWILIO_SERVICE_SID!)
         .verificationChecks.create({
-          to: phone_number,
+          to: formattedPhoneNumber,
           code: otp,
         });
 
@@ -137,6 +210,8 @@ export const verifyOtp = async (
         const user = await prisma.user.create({
           data: {
             phone_number: phone_number,
+            totalRides: 0,
+            ratings: 0,
           },
         });
         console.log("New user created, sending token...");
@@ -304,4 +379,123 @@ export const getAllRides = async (req: any, res: Response) => {
   res.status(201).json({
     rides,
   });
+};
+
+// create new ride
+export const createRide = async (req: any, res: Response) => {
+  try {
+    const {
+      driverId,
+      charge,
+      currentLocationName,
+      destinationLocationName,
+      distance,
+      currentLocation,
+      destination,
+    } = req.body;
+
+    const userId = req.user?.id;
+
+    if (!userId || !driverId || !charge || !currentLocationName || !destinationLocationName || !distance) {
+      return res.status(400).json({
+        success: false,
+        message: "Missing required fields",
+      });
+    }
+
+    const newRide = await prisma.rides.create({
+      data: {
+        userId,
+        driverId,
+        charge: parseFloat(charge),
+        status: "Pending",
+        currentLocationName,
+        destinationLocationName,
+        distance: parseFloat(distance),
+      },
+    });
+
+    res.status(201).json({
+      success: true,
+      ride: newRide,
+      message: "Ride created successfully",
+    });
+  } catch (error) {
+    console.error("Error creating ride:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to create ride",
+    });
+  }
+};
+
+// update user profile
+export const updateUserProfile = async (req: any, res: Response) => {
+  try {
+    const { name, email } = req.body;
+    const userId = req.user?.id;
+
+    // Validate input
+    if (!name || name.trim() === "") {
+      return res.status(400).json({
+        success: false,
+        message: "Name is required",
+      });
+    }
+
+    if (!email || email.trim() === "") {
+      return res.status(400).json({
+        success: false,
+        message: "Email is required",
+      });
+    }
+
+    // Basic email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      return res.status(400).json({
+        success: false,
+        message: "Please enter a valid email address",
+      });
+    }
+
+    // Check if email is already taken by another user
+    const existingUser = await prisma.user.findFirst({
+      where: {
+        email: email.trim(),
+        id: {
+          not: userId,
+        },
+      },
+    });
+
+    if (existingUser) {
+      return res.status(400).json({
+        success: false,
+        message: "Email is already in use",
+      });
+    }
+
+    const updatedUser = await prisma.user.update({
+      where: {
+        id: userId,
+      },
+      data: {
+        name: name.trim(),
+        email: email.trim(),
+      },
+    });
+
+    res.status(200).json({
+      success: true,
+      user: updatedUser,
+      message: "Profile updated successfully",
+    });
+  } catch (error) {
+    console.error("Error updating user profile:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to update profile",
+    });
+  }
 };

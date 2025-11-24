@@ -28,8 +28,8 @@ const AuthContainer = ({ container, topSpace, imageShow }: Props) => {
         <Image
           source={Images.logo}
           style={{
-            width: windowWidth(200),
-            height: windowHeight(60),
+            width: windowWidth(300),
+            height: windowHeight(90),
             alignSelf: "center",
             marginTop: windowHeight(50),
             resizeMode: "contain",

@@ -1,42 +1,29 @@
-type ButtonProps = {
-  title?: string;
-  onPress?: () => void;
-  width?: DimensionValue;
-  backgroundColor?: string;
-  textColor?: string;
-  disabled?: boolean;
-  loading?: boolean;
-};
+declare global {
+  namespace ReactNavigation {
+    interface RootParamList extends RootStackParamList {}
+  }
+}
 
-type UserType = {
+export interface UserType {
   id: string;
   name: string;
-  phone_number: string;
   email: string;
-  ratings?: Number;
-  totalRides?: Number;
-  cratedAt: Date;
-  updatedAt: Date;
-};
+  phone_number: string;
+  country_code: string;
+  token?: string;
+}
 
-type DriverType = {
+export interface DriverType {
   id: string;
   name: string;
-  country: string;
-  phone_number: string;
   email: string;
+  phone_number: string;
+  country_code: string;
   vehicle_type: string;
-  registration_number: string;
-  registration_date: string;
-  driving_license: string;
-  vehicle_color: string;
+  vehicle_number: string;
+  vehicle_model: string;
+  license_number: string;
   rate: string;
-  ratings: number;
-  totalEarning: number;
-  totalRides: number;
-  pendingRides: number;
-  cancelRides: number;
-  status: string;
-  createdAt: Date;
-  updatedAt: Date;
-};
+}
+
+export {};

@@ -120,26 +120,65 @@ export default function RidePlanScreen() {
     })();
   }, []);
 
-  const initializeWebSocket = () => {
-    ws.current = new WebSocket("ws://192.168.1.2:8080");
-    ws.current.onopen = () => {
-      console.log("Connected to websocket server");
-      setWsConnected(true);
+  const initializeWebSocket = async () => {
+    // Helper to determine a bootstrap host to contact backend
+    const getBootstrapHost = (): string => {
+      const isAndroidEmulator = Platform.OS === "android" && !Device.isDevice;
+      if (isAndroidEmulator) return "10.0.2.2"; // Android emulator -> host loopback
+      const extras = (Constants as any)?.expoConfig?.extra || (Constants as any)?.manifest?.extra || {};
+      if (extras?.WS_HOST) return extras.WS_HOST;
+      const hostUri = (Constants as any)?.expoConfig?.hostUri || (Constants as any)?.manifest?.debuggerHost || "";
+      if (hostUri) {
+        const host = hostUri.split(":")[0];
+        return host;
+      }
+      return "localhost";
     };
 
-    ws.current.onerror = (e: any) => {
-      console.log("WebSocket error:", e.message);
-    };
+    try {
+      const bootstrapHost = getBootstrapHost();
+      // Query server for its current LAN IP
+      const res = await axios.get(`http://${bootstrapHost}:8080/api/v1/server-ip`);
+      const serverIp = res.data?.ip || bootstrapHost;
 
-    ws.current.onclose = (e: any) => {
-      console.log("WebSocket closed:", e.code, e.reason);
-      setWsConnected(false);
-      // Attempt to reconnect after a delay
-      setTimeout(() => {
-        initializeWebSocket();
-      }, 5000);
-    };
+      // Detect device type
+      const isAndroidEmulator = Platform.OS === "android" && !Device.isDevice;
+
+      const finalIp = isAndroidEmulator ? "10.0.2.2" : serverIp;
+      const wsUrl = `ws://${finalIp}:8080`;
+
+      ws.current = new WebSocket(wsUrl);
+
+      ws.current.onopen = () => {
+        console.log("WebSocket connected:", wsUrl);
+        setWsConnected(true);
+      };
+
+      ws.current.onerror = (err) => {
+        console.log("WebSocket error:", err.message);
+      };
+
+      ws.current.onclose = () => {
+        console.log("WebSocket closed — reconnecting...");
+        setWsConnected(false);
+        setTimeout(() => initializeWebSocket(), 4000);
+      };
+
+      ws.current.onmessage = async (e) => {
+        try {
+          const msg = JSON.parse(e.data);
+          if (msg.type === "nearbyDrivers") {
+            await getDriversData(msg.drivers);
+          }
+        } catch (error) {
+          console.log("WebSocket parse error:", error);
+        }
+      };
+    } catch (e) {
+      console.log("Error fetching server IP:", e);
+    }
   };
+  
 
   useEffect(() => {
     initializeWebSocket();
@@ -346,6 +385,7 @@ export default function RidePlanScreen() {
     ws.current.onmessage = async (e: any) => {
       try {
         const message = JSON.parse(e.data);
+        console.log("WS message:", message);
         if (message.type === "nearbyDrivers") {
           await getDriversData(message.drivers);
         }
@@ -356,22 +396,30 @@ export default function RidePlanScreen() {
   };
 
   const getDriversData = async (drivers: any) => {
-    // Extract driver IDs from the drivers array
-    const driverIds = drivers.map((driver: any) => driver.id).join(",");
-    const response = await axios.get(
-      `${process.env.EXPO_PUBLIC_SERVER_URI}/driver/get-drivers-data`,
-      {
-        params: { ids: driverIds },
-      }
-    );
+    try {
+      // Extract driver IDs from the drivers array
+      const driverIds = drivers.map((driver: any) => driver.id).join(",");
+      console.log("Fetching driver details for IDs:", driverIds);
+      const response = await axios.get(
+        `${process.env.EXPO_PUBLIC_SERVER_URI}/driver/get-drivers-data`,
+        {
+          params: { ids: driverIds },
+        }
+      );
 
-    const driverData = response.data;
-    setdriverLists(driverData);
-    setdriverLoader(false);
+      const driverData = response.data?.drivers || [];
+      console.log("Resolved driverData count:", driverData.length);
+      setdriverLists(driverData);
+      setdriverLoader(false);
+    } catch (err) {
+      console.log("getDriversData error:", err);
+      setdriverLists([]);
+      setdriverLoader(false);
+    }
   };
 
   const requestNearbyDrivers = () => {
-    console.log(wsConnected);
+    console.log("Requesting ride, wsConnected:", wsConnected, "currentLocation:", currentLocation);
     if (currentLocation && wsConnected) {
       ws.current.send(
         JSON.stringify({

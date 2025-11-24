@@ -1,4 +1,4 @@
-import { View, Text, SafeAreaView, FlatList, ScrollView } from "react-native";
+import { View, Text, SafeAreaView, ScrollView } from "react-native";
 import styles from "./styles";
 import { commonStyles } from "@/styles/common.style";
 import { external } from "@/styles/external.style";
@@ -8,67 +8,94 @@ import { useEffect, useState } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import axios from "axios";
 import RideCard from "@/components/ride/ride.card";
-import { recentRidesData } from "@/configs/constants";
+import { getApiBaseUrl } from "@/utils/apiConfig";
+import { windowHeight } from "@/themes/app.constant";
 
 export default function HomeScreen() {
-  const [recentRides, setrecentRides] = useState(recentRidesData);
+  const [recentRides, setRecentRides] = useState([]);
 
   const getRecentRides = async () => {
-    const accessToken = await AsyncStorage.getItem("accessToken");
-    const res = await axios.get(
-      `${process.env.EXPO_PUBLIC_SERVER_URI}/get-rides`,
-      {
+    try {
+      const accessToken = await AsyncStorage.getItem("accessToken");
+      const baseUrl = await getApiBaseUrl();
+
+      const res = await axios.get(`${baseUrl}/get-rides`, {
         headers: {
           Authorization: `Bearer ${accessToken}`,
         },
-      }
-    );
-    setrecentRides(res.data.rides);
+      });
+
+      setRecentRides(res.data.rides || []);
+    } catch (error) {
+      console.log("Failed to load rides:", error);
+    }
   };
 
   useEffect(() => {
-    // For now, using mock data. Uncomment the line below to fetch from API
-    // getRecentRides();
+    getRecentRides();
   }, []);
 
   return (
-    <View style={[commonStyles.flexContainer, { backgroundColor: "#fff" }]}>
-      <SafeAreaView style={styles.container}>
-        <View style={[external.p_5, external.ph_20]}>
+    <SafeAreaView
+      style={[
+        commonStyles.flexContainer,
+        { backgroundColor: color.whiteColor }
+      ]}
+    >
+      <ScrollView
+        style={{ flex: 1 }}
+        contentContainerStyle={{
+          paddingBottom: windowHeight(30),
+        }}
+        showsVerticalScrollIndicator={false}
+      >
+        {/* Header section */}
+        <View
+          style={[
+            external.p_5,
+            external.ph_20,
+            { paddingTop: windowHeight(20) }
+          ]}
+        >
           <Text
             style={{
               fontFamily: "Poppins-Bold",
-              fontSize: 25,
+              fontSize: 26,
+              letterSpacing: 0.5,
+              color: color.titleText,
             }}
           >
-            CHAKRAAgit commit -m "Your commit message here"
-
+            CHAKRAA
           </Text>
+
           <LocationSearchBar />
         </View>
-        <View style={{ padding: 5 }}>
-          <View
-            style={[
-              styles.rideContainer,
-              { backgroundColor: color.whiteColor },
-            ]}
-          >
-            <Text style={[styles.rideTitle, { color: color.regularText }]}>
+
+        {/* Recent Rides */}
+        <View style={{ paddingHorizontal: 14, marginTop: windowHeight(10) }}>
+          <View style={[styles.rideContainer]}>
+            <Text style={[styles.rideTitle, { color: color.primaryText }]}>
               Recent Rides
             </Text>
-            <ScrollView>
-              {recentRides?.map((item: any, index: number) => (
+
+            {recentRides.length > 0 ? (
+              recentRides.map((item: any, index: number) => (
                 <RideCard item={item} key={index} />
-              ))}
-              {recentRides?.length === 0 && (
-                <Text style={{ fontSize: 16 }}>
-                  You don't have any ride history yet!
-                </Text>
-              )}
-            </ScrollView>
+              ))
+            ) : (
+              <Text
+                style={{
+                  fontSize: 16,
+                  color: color.secondaryFont,
+                  paddingVertical: 10,
+                }}
+              >
+                No rides found.
+              </Text>
+            )}
           </View>
         </View>
-      </SafeAreaView>
-    </View>
+      </ScrollView>
+    </SafeAreaView>
   );
 }

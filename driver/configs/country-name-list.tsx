@@ -1,4 +1,5 @@
 export const countryNameItems = [
+    { label: "India 🇮🇳", value: "91" },
     { label: "Afghanistan 🇦🇫", value: "93" },
     { label: "Albania 🇦🇱", value: "355" },
     { label: "Algeria 🇩🇿", value: "213" },
@@ -72,7 +73,6 @@ export const countryNameItems = [
     { label: "Honduras 🇭🇳", value: "504" },
     { label: "Hungary 🇭🇺", value: "36" },
     { label: "Iceland 🇮🇸", value: "354" },
-    { label: "India 🇮🇳", value: "91" },
     { label: "Indonesia 🇮🇩", value: "62" },
     { label: "Iran 🇮🇷", value: "98" },
     { label: "Iraq 🇮🇶", value: "964" },

@@ -15,7 +15,6 @@ export default function RideDetailsScreen() {
     latitudeDelta: 0.0922,
     longitudeDelta: 0.0421,
   });
-
   useEffect(() => {
     if (orderData?.driver?.currentLocation && orderData?.driver?.marker) {
       const latitudeDelta =

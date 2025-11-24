@@ -36,7 +36,7 @@ export default function Index() {
   }
 
   return (
-     <Redirect href="/(tabs)/home" />
-    //<Redirect href={!isLoggedIn ? "/(routes)/onboarding" : "/(tabs)/home"} />
+    // <Redirect href={"/(tabs)/home"} />
+   <Redirect href={!isLoggedIn ? "/(routes)/onboarding" : "/(tabs)/home"} />
   );
 }

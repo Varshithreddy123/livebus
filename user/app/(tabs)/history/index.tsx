@@ -6,14 +6,15 @@ import RideCard from "@/components/ride/ride.card";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import axios from "axios";
 import { windowHeight } from "@/themes/app.constant";
-import { recentRidesData } from "@/configs/constants";
+// import { recentRidesData } from "@/configs/constants";
 
 export default function History() {
-  const [recentRides, setrecentRides] = useState(recentRidesData);
+  const [recentRides, setrecentRides] = useState([]);
   const getRecentRides = async () => {
     const accessToken = await AsyncStorage.getItem("accessToken");
+    const baseUrl = await getApiBaseUrl();
     const res = await axios.get(
-      `${process.env.EXPO_PUBLIC_SERVER_URI}/get-rides`,
+      `${baseUrl}/get-rides`,
       {
         headers: {
           Authorization: `Bearer ${accessToken}`,
@@ -24,8 +25,8 @@ export default function History() {
   };
 
   useEffect(() => {
-    // For now, using mock data. Uncomment the line below to fetch from API
-    // getRecentRides();
+    // Now fetching real data from API
+    getRecentRides();
   }, []);
 
   return (

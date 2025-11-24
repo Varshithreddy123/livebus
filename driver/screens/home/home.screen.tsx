@@ -9,7 +9,8 @@ import {
 } from "react-native";
 import React, { useEffect, useRef, useState } from "react";
 import Header from "@/components/common/header";
-import { recentRidesData, rideData } from "@/configs/constants";
+// import { recentRidesData } from "@/configs/constants";
+import { rideData } from "@/configs/constants";
 import { useTheme } from "@react-navigation/native";
 import RenderRideItem from "@/components/ride/render.ride.item";
 import { external } from "@/styles/external.style";
@@ -52,7 +53,7 @@ export default function HomeScreen() {
   const [currentLocation, setCurrentLocation] = useState<any>(null);
   const [lastLocation, setLastLocation] = useState<any>(null);
   const [recentRides, setrecentRides] = useState([]);
-  const ws = new WebSocket("ws://10.113.22.129:8080");
+  const ws = useRef<any>(null);
 
   const { colors } = useTheme();
 
@@ -175,27 +176,40 @@ export default function HomeScreen() {
 
   // socket updates
   useEffect(() => {
-    ws.onopen = () => {
-      console.log("Connected to WebSocket server");
-      setWsConnected(true);
+  const initializeWebSocket = () => {
+    const { getWebSocketUrl } = require("@/utils/apiConfig");
+    ws.current = new WebSocket(getWebSocketUrl());
+      ws.current.onopen = () => {
+        console.log("Connected to WebSocket server");
+        setWsConnected(true);
+      };
+
+      ws.current.onmessage = (e: any) => {
+        const message = JSON.parse(e.data);
+        console.log("Received message:", message);
+        // Handle received location updates here
+      };
+
+      ws.current.onerror = (e: any) => {
+        console.log("WebSocket error:", e.message);
+      };
+
+      ws.current.onclose = (e: any) => {
+        console.log("WebSocket closed:", e.code, e.reason);
+        setWsConnected(false);
+        // Attempt to reconnect after a delay
+        setTimeout(() => {
+          initializeWebSocket();
+        }, 5000);
+      };
     };
 
-    ws.onmessage = (e) => {
-      const message = JSON.parse(e.data);
-      console.log("Received message:", message);
-      // Handle received location updates here
-    };
-
-    ws.onerror = (e: any) => {
-      console.log("WebSocket error:", e.message);
-    };
-
-    ws.onclose = (e) => {
-      console.log("WebSocket closed:", e.code, e.reason);
-    };
+    initializeWebSocket();
 
     return () => {
-      ws.close();
+      if (ws.current) {
+        ws.current.close();
+      }
     };
   }, []);
 
@@ -230,14 +244,15 @@ export default function HomeScreen() {
       })
       .then((res) => {
         if (res.data) {
-          if (ws.readyState === WebSocket.OPEN) {
+          if (ws.current && ws.current.readyState === WebSocket.OPEN) {
             const message = JSON.stringify({
               type: "locationUpdate",
               data: location,
               role: "driver",
               driver: res.data.driver.id!,
+              token: accessToken,
             });
-            ws.send(message);
+            ws.current.send(message);
           }
         }
       })
@@ -315,8 +330,14 @@ export default function HomeScreen() {
         }
       );
       if (changeStatus.data) {
-        setIsOn(!isOn);
+        const newStatus = !isOn;
+        setIsOn(newStatus);
         await AsyncStorage.setItem("status", changeStatus.data.driver.status);
+        if (!newStatus) {
+          console.log("driver is on leave");
+        } else {
+          console.log("driver is on duty");
+        }
         setloading(false);
       } else {
         setloading(false);
@@ -405,11 +426,6 @@ export default function HomeScreen() {
               <RideCard item={item} key={index} />
             ))
           ) : (
-            recentRidesData.map((item: any, index: number) => (
-              <RideCard item={item} key={`mock-${index}`} />
-            ))
-          )}
-          {recentRides?.length === 0 && recentRidesData.length === 0 && (
             <Text>You didn't take any ride yet!</Text>
           )}
         </View>
@@ -437,6 +453,9 @@ export default function HomeScreen() {
                     apikey={process.env.EXPO_PUBLIC_GOOGLE_CLOUD_API_KEY!}
                     strokeWidth={4}
                     strokeColor="blue"
+                    onError={(errorMessage) => {
+                      console.log('MapViewDirections Error:', errorMessage);
+                    }}
                   />
                 )}
               </MapView>

@@ -51,7 +51,8 @@
     "extra": {
       "eas": {
         "projectId": "6cdffa57-e0c7-4571-bbe8-7b3c97422bc2"
-      }
+      },
+      "WEBSOCKET_URL": "ws://10.30.255.94:8080"
     }
   }
 }

@@ -4,7 +4,7 @@
     "slug": "RideWave",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/images/logo/logo.png",
+    "icon": "./assets/icon.png",
     "scheme": "RideWave",
     "userInterfaceStyle": "light",
     "splash": {
@@ -17,41 +17,30 @@
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/images/logo/logo.png",
+        "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
-      "package": "com.becodemy.RideWave",
+      "package": "com.livebustracking.Chakraa",
       "config": {
         "googleMaps": {
-          "apiKey": ""
+          "apiKey": "AIzaSyB2FZr208vxtUuEH4NLT87LnnDDDtRsemo"
         }
       }
     },
     "web": {
-      "favicon": "./assets/images/logo/logo.png"
+      "favicon": "./assets/favicon.png"
     },
     "plugins": [
       "expo-router",
       [
         "expo-font",
         {
-          "fonts": [
-            "./assets/fonts/TT-Octosquares-Medium.ttf",
-            "./assets/fonts/Poppin/Poppins-Regular.ttf",
-            "./assets/fonts/Poppin/Poppins-Medium.ttf",
-            "./assets/fonts/Poppin/Poppins-SemiBold.ttf",
-            "./assets/fonts/Poppin/Poppins-Bold.ttf"
-          ]
+          "fonts": ["./assets/fonts/TT-Octosquares-Medium.ttf"]
         }
       ]
     ],
     "experiments": {
       "typedRoutes": true
-    },
-    "extra": {
-      "eas": {
-        "projectId": "6cdffa57-e0c7-4571-bbe8-7b3c97422bc2"
-      }
     }
   }
 }

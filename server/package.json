@@ -16,6 +16,7 @@
     "cookie-parser": "^1.4.6",
     "dotenv": "^17.2.3",
     "express": "^4.19.2",
+    "geolib": "^3.3.4",
     "ip": "^2.0.1",
     "jsonwebtoken": "^9.0.2",
     "nylas": "^7.5.2",
