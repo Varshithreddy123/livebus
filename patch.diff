@@ -1,58 +1,37 @@
-import MapViewDirections from "react-native-maps-directions";
+<<<<<<<
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#ffffff"
+      },
+      "package": "com.livebustracking.Chakraa",
+      "config": {
+        "googleMaps": {
+          "apiKey": "AIzaSyB2FZr208vxtUuEH4NLT87LnnDDDtRsemo"
+        }
+      }
+    },
 =======
-import { MapView, Marker } from "expo-maps";
-// MapViewDirections from react-native-maps-directions removed due to incompatibility
->>>>>>> REPLACE
-<<<<<<< SEARCH
-      <View
-        style={{ height: windowHeight(!keyboardAvoidingHeight ? 500 : 300) }}
-      >
-        <MapView
-          style={{ flex: 1 }}
-          region={region}
-          onRegionChangeComplete={(region) => setRegion(region)}
-        >
-          {marker && <Marker coordinate={marker} />}
-          {currentLocation && <Marker coordinate={currentLocation} />}
-          {currentLocation && marker && (
-            <MapViewDirections
-              origin={currentLocation}
-              destination={marker}
-              apikey={process.env.EXPO_PUBLIC_GOOGLE_CLOUD_API_KEY!}
-              strokeWidth={4}
-              strokeColor="blue"
-            />
-          )}
-        </MapView>
-      </View>
-=======
-      <View
-        style={{ height: windowHeight(!keyboardAvoidingHeight ? 500 : 300) }}
-      >
-        {mapLoading ? (
-          <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
-            <ActivityIndicator size={'large'} />
-            <Text>Loading map...</Text>
-          </View>
-        ) : mapError ? (
-          <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
-            <Text style={{ color: 'red', fontSize: 16 }}>{mapError}</Text>
-          </View>
-        ) : !locationPermissionGranted ? (
-          <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
-            <Text style={{ color: 'red', fontSize: 16 }}>
-              Location permission is required to show the map.
-            </Text>
-          </View>
-        ) : (
-          <MapView
-            style={{ flex: 1 }}
-            initialRegion={region}
-            onRegionChangeComplete={(region) => setRegion(region)}
-            onMapReady={() => setMapLoading(false)}
-          >
-            {marker && <Marker coordinate={marker} />}
-            {currentLocation && <Marker coordinate={currentLocation} />}
-          </MapView>
-        )}
-      </View>
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#ffffff"
+      },
+      "package": "com.livebustracking.Chakraa",
+      "config": {
+        "googleMaps": {
+          "apiKey": "AIzaSyB2FZr208vxtUuEH4NLT87LnnDDDtRsemo"
+        }
+      },
+      "plugins": [
+        [
+          "expo-build-properties",
+          {
+            "android": {
+              "kotlinVersion": "1.9.23"
+            }
+          }
+        ]
+      ]
+    },
+>>>>>>>
