@@ -1,11 +1,11 @@
 {
   "expo": {
-    "name": "RideWave",
-    "slug": "RideWave",
+    "name": "Chakraa",
+    "slug": "Chakraa",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
-    "scheme": "RideWave",
+    "scheme": "Chakraa",
     "userInterfaceStyle": "light",
     "splash": {
       "image": "./assets/splash.png",
@@ -25,7 +25,17 @@
         "googleMaps": {
           "apiKey": "AIzaSyB2FZr208vxtUuEH4NLT87LnnDDDtRsemo"
         }
-      }
+      },
+      "plugins": [
+        [
+          "expo-build-properties",
+          {
+            "android": {
+              "kotlinVersion": "1.9.23"
+            }
+          }
+        ]
+      ]
     },
     "web": {
       "favicon": "./assets/favicon.png"
@@ -35,12 +45,23 @@
       [
         "expo-font",
         {
-          "fonts": ["./assets/fonts/TT-Octosquares-Medium.ttf"]
+          "fonts": [
+            "./assets/fonts/TT-Octosquares-Medium.ttf"
+          ]
         }
-      ]
+      ],
+      "expo-maps"
     ],
     "experiments": {
       "typedRoutes": true
+    },
+    "extra": {
+      "router": {
+        "origin": false
+      },
+      "eas": {
+        "projectId": "37420135-6aae-43ad-bd9f-814a68519e7e"
+      }
     }
   }
 }
