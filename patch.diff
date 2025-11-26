@@ -1,37 +1,22 @@
-<<<<<<<
-    "android": {
-      "adaptiveIcon": {
-        "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#ffffff"
-      },
-      "package": "com.livebustracking.Chakraa",
-      "config": {
-        "googleMaps": {
-          "apiKey": "AIzaSyB2FZr208vxtUuEH4NLT87LnnDDDtRsemo"
+"android": {
+  "adaptiveIcon": {
+    "foregroundImage": "./assets/adaptive-icon.png",
+    "backgroundColor": "#ffffff"
+  },
+  "package": "com.livebustracking.Chakraa",
+  "config": {
+    "googleMaps": {
+      "apiKey": "AIzaSyB2FZr208vxtUuEH4NLT87LnnDDDtRsemo"
+    }
+  },
+  "plugins": [
+    [
+      "expo-build-properties",
+      {
+        "android": {
+          "kotlinVersion": "1.9.23"
         }
       }
-    },
-=======
-    "android": {
-      "adaptiveIcon": {
-        "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#ffffff"
-      },
-      "package": "com.livebustracking.Chakraa",
-      "config": {
-        "googleMaps": {
-          "apiKey": "AIzaSyB2FZr208vxtUuEH4NLT87LnnDDDtRsemo"
-        }
-      },
-      "plugins": [
-        [
-          "expo-build-properties",
-          {
-            "android": {
-              "kotlinVersion": "1.9.23"
-            }
-          }
-        ]
-      ]
-    },
->>>>>>>
+    ]
+  ]
+},

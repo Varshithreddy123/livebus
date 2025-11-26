@@ -17,11 +17,15 @@ const styles = StyleSheet.create({
      
   },
   backgroundImage: {
-    width: "100%",
-    height: windowHeight(150),
-    // marginTop: windowHeight(150),
-    position: "absolute",
-  },
+  width: windowHeight(400),
+  height: windowHeight(250),
+  position: "absolute",
+  top: 100,
+  bottom: 20,
+  aspectRatio: 2.5,   // PERFECT ratio for your Chakraa banner
+  resizeMode: "contain",
+},
+
   contentContainer: {
     flex: 1,
     justifyContent: "flex-end",

@@ -24,22 +24,12 @@ const AuthContainer = ({ container, topSpace, imageShow }: Props) => {
       style={[external.fx_1]}
       behavior={Platform.OS === "ios" ? "padding" : "height"}
     >
-      {imageShow && (
-        <Image
-          source={Images.logo}
-          style={{
-            width: windowWidth(300),
-            height: windowHeight(90),
-            alignSelf: "center",
-            marginTop: windowHeight(50),
-            resizeMode: "contain",
-          }}
-        />
-      )}
+      
       <Image
-        style={[styles.backgroundImage, { marginTop: topSpace }]}
-        source={Images.authBg}
-      />
+  style={[styles.backgroundImage]}
+  source={Images.authBg}
+/>
+
 
       <View style={styles.contentContainer}>
         <View style={[styles.container]}>
