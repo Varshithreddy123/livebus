@@ -1,124 +1,55 @@
 const express = require("express");
 const { WebSocketServer } = require("ws");
 const geolib = require("geolib");
-const axios = require("axios");
 
 const app = express();
-const PORT = 4000;
-const SERVER_URI = process.env.SERVER_URI || "http://localhost:8080";
+const PORT = 3000;
 
+// Store driver locations
+let drivers = {};
 
 // Create WebSocket server
-const wss = new WebSocketServer({
-  port: 8080,
-  host: "0.0.0.0", // listen on all interfaces
-});
-
-console.log("WebSocket server running on port 8080");
+const wss = new WebSocketServer({ port: 8080 });
 
 wss.on("connection", (ws) => {
-  ws.on("message", async (message) => {
+  ws.on("message", (message) => {
     try {
       const data = JSON.parse(message);
-      console.log("Received message:", data);
+      console.log("Received message:", data); // Debugging line
 
       if (data.type === "locationUpdate" && data.role === "driver") {
-        // Persist latest driver location to DB
-        axios
-          .put(
-            `${SERVER_URI}/driver/update-location`,
-            {
-              latitude: data.data.latitude,
-              longitude: data.data.longitude,
-            },
-            {
-              headers: { Authorization: `Bearer ${data.token}` },
-            }
-          )
-          .catch((error) => {
-            console.log("Error updating location in DB:", error.message);
-          });
+        drivers[data.driver] = {
+          latitude: data.data.latitude,
+          longitude: data.data.longitude,
+        };
+        console.log("Updated driver location:", drivers[data.driver]); // Debugging line
       }
 
       if (data.type === "requestRide" && data.role === "user") {
         console.log("Requesting ride...");
-        const nearbyDrivers = await findNearbyDrivers(
-          data.latitude,
-          data.longitude
+        const nearbyDrivers = findNearbyDrivers(data.latitude, data.longitude);
+        ws.send(
+          JSON.stringify({ type: "nearbyDrivers", drivers: nearbyDrivers })
         );
-        ws.send(JSON.stringify({ type: "nearbyDrivers", drivers: nearbyDrivers }));
-      }
-
-      if (data.type === "acceptRide" && data.role === "driver") {
-        console.log("Driver accepting ride:", data.rideId);
-        // Broadcast to all connected clients that ride was accepted
-        wss.clients.forEach((client) => {
-          if (client.readyState === 1) {
-            client.send(
-              JSON.stringify({
-                type: "rideAccepted",
-                rideId: data.rideId,
-                driverId: data.driverId,
-              })
-            );
-          }
-        });
-      }
-
-      if (data.type === "rejectRide" && data.role === "driver") {
-        console.log("Driver rejecting ride:", data.rideId);
-        // Broadcast to all connected clients that ride was rejected
-        wss.clients.forEach((client) => {
-          if (client.readyState === 1) {
-            client.send(
-              JSON.stringify({
-                type: "rideRejected",
-                rideId: data.rideId,
-                driverId: data.driverId,
-              })
-            );
-          }
-        });
       }
     } catch (error) {
-      console.log("Failed to handle WebSocket message:", error);
+      console.log("Failed to parse WebSocket message:", error);
     }
   });
 });
 
-const findNearbyDrivers = async (userLat, userLon) => {
-  try {
-    // Fetch active drivers with their locations from API (no auth required for this route)
-    const resp = await axios.get(`${SERVER_URI}/driver/get-drivers-data`);
-    const activeDrivers = (resp.data?.drivers || []).filter(
-      (d) => d.latitude != null && d.longitude != null && d.status === "active"
-    );
-
-    console.log(`Found ${activeDrivers.length} active drivers from API`);
-
-    // Filter drivers within 5km radius
-    const nearbyDrivers = activeDrivers.filter((driver) => {
+const findNearbyDrivers = (userLat, userLon) => {
+  return Object.entries(drivers)
+    .filter(([id, location]) => {
       const distance = geolib.getDistance(
         { latitude: userLat, longitude: userLon },
-        { latitude: driver.latitude, longitude: driver.longitude }
+        location
       );
       return distance <= 5000; // 5 kilometers
-    });
-
-    console.log(`Found ${nearbyDrivers.length} nearby drivers within 5km`);
-    return nearbyDrivers.map((driver) => ({
-      id: driver.id,
-      latitude: driver.latitude,
-      longitude: driver.longitude,
-      vehicle_type: driver.vehicle_type,
-      rate: driver.rate,
-    }));
-  } catch (error) {
-    console.error("Error finding nearby drivers via API:", error.message);
-    return [];
-  }
+    })
+    .map(([id, location]) => ({ id, ...location }));
 };
 
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
-});
+});a

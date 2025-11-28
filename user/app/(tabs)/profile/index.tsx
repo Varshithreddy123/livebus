@@ -11,7 +11,7 @@ import {
 import axios from "axios";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { router } from "expo-router";
-import { User, Mail, Phone, Edit, LogOut } from "lucide-react-native";
+import { Ionicons } from "@expo/vector-icons";
 
 import Input from "@/components/common/input";
 import Button from "@/components/common/button";
@@ -91,7 +91,7 @@ export default function Profile() {
         {/* Name */}
         <View style={styles.fieldBox}>
           <View style={styles.fieldHeader}>
-            <User size={20} color={color.primaryText} />
+            <Ionicons name="person-outline" size={20} color={color.primaryText} />
             <Text style={styles.fieldLabel}>Full Name</Text>
           </View>
 
@@ -110,7 +110,7 @@ export default function Profile() {
         {/* Email */}
         <View style={styles.fieldBox}>
           <View style={styles.fieldHeader}>
-            <Mail size={20} color={color.primaryText} />
+            <Ionicons name="mail-outline" size={20} color={color.primaryText} />
             <Text style={styles.fieldLabel}>Email Address</Text>
           </View>
 
@@ -120,14 +120,12 @@ export default function Profile() {
         {/* Phone */}
         <View style={styles.fieldBox}>
           <View style={styles.fieldHeader}>
-            <Phone size={20} color={color.primaryText} />
+            <Ionicons name="call-outline" size={20} color={color.primaryText} />
             <Text style={styles.fieldLabel}>Phone Number</Text>
           </View>
 
           <Text style={styles.fieldValue}>
-            {user?.phone_number
-              ? `****${user.phone_number.slice(-4)}`
-              : "Not provided"}
+            {user?.phone_number ? `****${user.phone_number.slice(-4)}` : "Not provided"}
           </Text>
         </View>
       </View>
@@ -171,13 +169,13 @@ export default function Profile() {
           </View>
         ) : (
           <TouchableOpacity style={styles.editButton} onPress={() => setIsEditing(true)}>
-            <Edit size={20} color={color.buttonBg} />
+            <Ionicons name="create-outline" size={20} color={color.buttonBg} />
             <Text style={styles.editButtonText}>Edit Profile</Text>
           </TouchableOpacity>
         )}
 
         <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
-          <LogOut size={20} color={color.alertRed} />
+          <Ionicons name="log-out-outline" size={20} color={color.alertRed} />
           <Text style={styles.logoutButtonText}>Log Out</Text>
         </TouchableOpacity>
       </View>
@@ -187,14 +185,12 @@ export default function Profile() {
 
 const styles = StyleSheet.create({
   center: { justifyContent: "center", alignItems: "center" },
-
   header: {
     alignItems: "center",
     paddingTop: windowHeight(50),
     paddingBottom: windowHeight(30),
     backgroundColor: color.buttonBg,
   },
-
   avatar: {
     width: windowWidth(90),
     height: windowWidth(90),
@@ -204,19 +200,16 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     marginBottom: windowHeight(15),
   },
-
   avatarText: {
     fontSize: fontSizes.FONT30,
     fontFamily: fonts.bold,
     color: color.buttonBg,
   },
-
   userName: {
     fontSize: fontSizes.FONT24,
     fontFamily: fonts.bold,
     color: color.whiteColor,
   },
-
   userEmail: {
     fontSize: fontSizes.FONT16,
     fontFamily: fonts.medium,
@@ -224,48 +217,40 @@ const styles = StyleSheet.create({
     opacity: 0.8,
     marginTop: 4,
   },
-
   section: {
     marginTop: windowHeight(20),
     padding: windowWidth(20),
   },
-
   sectionTitle: {
     fontSize: fontSizes.FONT20,
     fontFamily: fonts.bold,
     color: color.primaryText,
     marginBottom: windowHeight(15),
   },
-
   fieldBox: {
     backgroundColor: color.lightGray,
     padding: windowWidth(15),
     borderRadius: 10,
     marginBottom: windowHeight(18),
   },
-
   fieldHeader: { flexDirection: "row", alignItems: "center", marginBottom: 8 },
-
   fieldLabel: {
     marginLeft: 10,
     fontSize: fontSizes.FONT16,
     fontFamily: fonts.medium,
     color: color.primaryText,
   },
-
   fieldValue: {
     fontSize: fontSizes.FONT16,
     fontFamily: fonts.regular,
     color: color.secondaryFont,
     paddingLeft: 5,
   },
-
   statsRow: {
     flexDirection: "row",
     justifyContent: "space-between",
     marginTop: 10,
   },
-
   statBox: {
     flex: 1,
     marginHorizontal: 5,
@@ -274,31 +259,26 @@ const styles = StyleSheet.create({
     backgroundColor: color.lightGray,
     borderRadius: 10,
   },
-
   statNumber: {
     fontSize: fontSizes.FONT24,
     fontFamily: fonts.bold,
     color: color.buttonBg,
   },
-
   statLabel: {
     fontSize: fontSizes.FONT14,
     fontFamily: fonts.medium,
     color: color.secondaryFont,
     marginTop: 4,
   },
-
   actions: {
     padding: windowWidth(20),
     marginBottom: windowHeight(40),
   },
-
   editActions: {
     flexDirection: "row",
     justifyContent: "space-between",
     marginBottom: 25,
   },
-
   editButton: {
     flexDirection: "row",
     backgroundColor: color.selectPrimary,
@@ -308,14 +288,12 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginBottom: 20,
   },
-
   editButtonText: {
     fontSize: fontSizes.FONT16,
     color: color.buttonBg,
     fontFamily: fonts.medium,
     marginLeft: 8,
   },
-
   logoutButton: {
     flexDirection: "row",
     backgroundColor: color.alertBg,
@@ -324,7 +302,6 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
   },
-
   logoutButtonText: {
     marginLeft: 10,
     color: color.alertRed,

@@ -35,7 +35,7 @@ export default function OnBoardingScreen() {
                 <Text style={styles.description}>{silde.description}</Text>
                 <TouchableOpacity
                   style={styles.backArrow}
-                  onPress={() => router.push("/(routes)/login")}
+                  onPress={() => router.push("/(tabs)/home")}
                 >
                   <BackArrow colors={color.whiteColor} width={21} height={21} />
                 </TouchableOpacity>

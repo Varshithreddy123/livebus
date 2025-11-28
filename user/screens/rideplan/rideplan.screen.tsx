@@ -33,22 +33,28 @@ import { useGetUserData } from "@/hooks/useGetUserData";
 import * as Notifications from "expo-notifications";
 import * as Device from "expo-device";
 import Constants from "expo-constants";
+import { DriverType } from "@/types/global";
 
 export default function RidePlanScreen() {
-  const { user } = useGetUserData();
+  const { userData: user } = useGetUserData();
   const ws = useRef<any>(null);
+  const mapRef = useRef<any>(null);
   const notificationListener = useRef<any>();
+  const wsRetryCount = useRef(0);
   const [wsConnected, setWsConnected] = useState(false);
   const [places, setPlaces] = useState<any>([]);
-  const [query, setQuery] = useState("");
-  const [region, setRegion] = useState<any>({
-    latitude: 37.78825,
-    longitude: -122.4324,
-    latitudeDelta: 0.0922,
-    longitudeDelta: 0.0421,
-  });
+
+  const [region, setRegion] = useState({
+  latitude: 9.089993,
+  longitude: 76.490429,
+  latitudeDelta: 0.015,
+  longitudeDelta: 0.015,
+});
+
   const [marker, setMarker] = useState<any>(null);
   const [currentLocation, setCurrentLocation] = useState<any>(null);
+  const [currentLocationName, setCurrentLocationName] = useState("Current Location");
+  const [nearbyPlaces, setNearbyPlaces] = useState<any>([]);
   const [distance, setDistance] = useState<any>(null);
   const [locationSelected, setlocationSelected] = useState(false);
   const [selectedVehcile, setselectedVehcile] = useState("Car");
@@ -97,26 +103,53 @@ export default function RidePlanScreen() {
     (async () => {
       let { status } = await Location.requestForegroundPermissionsAsync();
       if (status !== "granted") {
-        Toast.show(
-          "Please approve your location tracking otherwise you can't use this app!",
-          {
-            type: "danger",
-            placement: "bottom",
-          }
-        );
+        Toast.show("Please approve location access!", { type: "danger" });
+        return;
       }
 
       let location = await Location.getCurrentPositionAsync({
         accuracy: Location.Accuracy.High,
       });
+
       const { latitude, longitude } = location.coords;
+
       setCurrentLocation({ latitude, longitude });
       setRegion({
         latitude,
         longitude,
-        latitudeDelta: 0.0922,
-        longitudeDelta: 0.0421,
+        latitudeDelta: 0.015,
+        longitudeDelta: 0.015,
       });
+
+      // ⭐ FIX: auto focus map AFTER setting region
+      setTimeout(() => {
+        mapRef.current?.animateToRegion(
+          {
+            latitude,
+            longitude,
+            latitudeDelta: 0.015,
+            longitudeDelta: 0.015,
+          },
+          600
+        );
+      }, 500);
+
+      // ⭐ FIX: Safe reverse geocode
+      try {
+        const response = await axios.get(
+          `https://maps.googleapis.com/maps/api/geocode/json?latlng=${latitude},${longitude}&key=${process.env.EXPO_PUBLIC_GOOGLE_CLOUD_API_KEY}`
+        );
+
+        if (response?.data?.results?.length > 0) {
+          setCurrentLocationName(
+            response.data.results[0].formatted_address
+          );
+        } else {
+          setCurrentLocationName("Current Location");
+        }
+      } catch (e) {
+        setCurrentLocationName("Current Location");
+      }
     })();
   }, []);
 
@@ -145,40 +178,45 @@ export default function RidePlanScreen() {
       const isAndroidEmulator = Platform.OS === "android" && !Device.isDevice;
 
       const finalIp = isAndroidEmulator ? "10.0.2.2" : serverIp;
-      const wsUrl = `ws://${finalIp}:8080`;
+      const wsUrl = isAndroidEmulator ? `ws://${finalIp}:8080` : "ws://10.113.22.129:8080";
 
       ws.current = new WebSocket(wsUrl);
 
       ws.current.onopen = () => {
         console.log("WebSocket connected:", wsUrl);
         setWsConnected(true);
+        wsRetryCount.current = 0; // Reset retry count on successful connection
       };
 
-      ws.current.onerror = (err) => {
+      ws.current.onerror = (err: any) => {
         console.log("WebSocket error:", err.message);
       };
 
       ws.current.onclose = () => {
         console.log("WebSocket closed — reconnecting...");
         setWsConnected(false);
-        setTimeout(() => initializeWebSocket(), 4000);
+        if (wsRetryCount.current < 5) {
+          wsRetryCount.current += 1;
+          setTimeout(() => initializeWebSocket(), 4000);
+        } else {
+          console.log("WebSocket reconnection limit reached");
+        }
       };
 
-      ws.current.onmessage = async (e) => {
+      ws.current.onmessage = async (e: any) => {
         try {
           const msg = JSON.parse(e.data);
           if (msg.type === "nearbyDrivers") {
             await getDriversData(msg.drivers);
           }
-        } catch (error) {
+        } catch (error: any) {
           console.log("WebSocket parse error:", error);
         }
       };
-    } catch (e) {
+    } catch (e: any) {
       console.log("Error fetching server IP:", e);
     }
   };
-  
 
   useEffect(() => {
     initializeWebSocket();
@@ -245,37 +283,7 @@ export default function RidePlanScreen() {
     }
   }
 
-  const fetchPlaces = async (input: any) => {
-    try {
-      const response = await axios.get(
-        `https://maps.googleapis.com/maps/api/place/autocomplete/json`,
-        {
-          params: {
-            input,
-            key: process.env.EXPO_PUBLIC_GOOGLE_CLOUD_API_KEY,
-            language: "en",
-          },
-        }
-      );
-      setPlaces(response.data.predictions);
-    } catch (error) {
-      console.log(error);
-    }
-  };
 
-  const debouncedFetchPlaces = useCallback(_.debounce(fetchPlaces, 100), []);
-
-  useEffect(() => {
-    if (query.length > 2) {
-      debouncedFetchPlaces(query);
-    } else {
-      setPlaces([]);
-    }
-  }, [query, debouncedFetchPlaces]);
-
-  const handleInputChange = (text: any) => {
-    setQuery(text);
-  };
 
   const fetchTravelTimes = async (origin: any, destination: any) => {
     const modes = ["driving", "walking", "bicycling", "transit"];
@@ -287,69 +295,51 @@ export default function RidePlanScreen() {
     } as any;
 
     for (const mode of modes) {
-      let params = {
-        origins: `${origin.latitude},${origin.longitude}`,
-        destinations: `${destination.latitude},${destination.longitude}`,
-        key: process.env.EXPO_PUBLIC_GOOGLE_CLOUD_API_KEY!,
-        mode: mode,
-      } as any;
+    try {
+      const payload = {
+        origin: {
+          location: {
+            latLng: {
+              latitude: origin.latitude,
+              longitude: origin.longitude
+            }
+          }
+        },
+        destination: {
+          location: {
+            latLng: {
+              latitude: destination.latitude,
+              longitude: destination.longitude
+            }
+          }
+        },
+        travelMode: mode === "bicycling" ? "BICYCLE" : mode.toUpperCase()
+      };
+      const headers = {
+        "Content-Type": "application/json",
+        "X-Goog-Api-Key": process.env.EXPO_PUBLIC_GOOGLE_CLOUD_API_KEY!,
+        "X-Goog-FieldMask": "routes.duration"
+      };
+      const response = await axios.post(
+        `https://routes.googleapis.com/directions/v2:computeRoutes`,
+        payload,
+        { headers }
+      );
 
-      if (mode === "driving") {
-        params.departure_time = "now";
-      }
-
-      try {
-        const response = await axios.get(
-          `https://maps.googleapis.com/maps/api/distancematrix/json`,
-          { params }
-        );
-
-        const elements = response.data.rows[0].elements[0];
-        if (elements.status === "OK") {
-          travelTimes[mode] = elements.duration.text;
-        }
-      } catch (error) {
-        console.log(error);
-      }
+      if (!response.data.routes || !response.data.routes[0]) continue;
+      const duration = response.data.routes[0].duration;
+      const seconds = parseInt(duration.seconds);
+      const minutes = Math.ceil(seconds / 60);
+      travelTimes[mode] = `${minutes} min${minutes !== 1 ? 's' : ''}`;
+    } catch (error) {
+      console.log("Travel time fetch error:", error);
+    }
     }
 
     setTravelTimes(travelTimes);
   };
 
-  const handlePlaceSelect = async (placeId: any) => {
-    try {
-      const response = await axios.get(
-        `https://maps.googleapis.com/maps/api/place/details/json`,
-        {
-          params: {
-            place_id: placeId,
-            key: process.env.EXPO_PUBLIC_GOOGLE_CLOUD_API_KEY,
-          },
-        }
-      );
-      const { lat, lng } = response.data.result.geometry.location;
 
-      const selectedDestination = { latitude: lat, longitude: lng };
-      setRegion({
-        ...region,
-        latitude: lat,
-        longitude: lng,
-      });
-      setMarker({
-        latitude: lat,
-        longitude: lng,
-      });
-      setPlaces([]);
-      requestNearbyDrivers();
-      setlocationSelected(true);
-      setkeyboardAvoidingHeight(false);
-      if (currentLocation) {
-        await fetchTravelTimes(currentLocation, selectedDestination);
-      }
-    } catch (error) {
-      console.log(error);
-    }
-  };
 
   const calculateDistance = (lat1: any, lon1: any, lat2: any, lon2: any) => {
     var p = 0.017453292519943295; // Math.PI / 180
@@ -385,7 +375,6 @@ export default function RidePlanScreen() {
     ws.current.onmessage = async (e: any) => {
       try {
         const message = JSON.parse(e.data);
-        console.log("WS message:", message);
         if (message.type === "nearbyDrivers") {
           await getDriversData(message.drivers);
         }
@@ -396,30 +385,23 @@ export default function RidePlanScreen() {
   };
 
   const getDriversData = async (drivers: any) => {
-    try {
-      // Extract driver IDs from the drivers array
-      const driverIds = drivers.map((driver: any) => driver.id).join(",");
-      console.log("Fetching driver details for IDs:", driverIds);
-      const response = await axios.get(
-        `${process.env.EXPO_PUBLIC_SERVER_URI}/driver/get-drivers-data`,
-        {
-          params: { ids: driverIds },
-        }
-      );
+    // Extract driver IDs from the drivers array
+    const driverIds = drivers.map((driver: any) => driver.id).join(",");
+    const response = await axios.get(
+      `${process.env.EXPO_PUBLIC_SERVER_URI}/api/v1/driver/get-drivers-data`,
 
-      const driverData = response.data?.drivers || [];
-      console.log("Resolved driverData count:", driverData.length);
-      setdriverLists(driverData);
-      setdriverLoader(false);
-    } catch (err) {
-      console.log("getDriversData error:", err);
-      setdriverLists([]);
-      setdriverLoader(false);
-    }
+      {
+        params: { ids: driverIds },
+      }
+    );
+
+    const driverData = response.data;
+    setdriverLists(driverData);
+    setdriverLoader(false);
   };
 
   const requestNearbyDrivers = () => {
-    console.log("Requesting ride, wsConnected:", wsConnected, "currentLocation:", currentLocation);
+    console.log(wsConnected);
     if (currentLocation && wsConnected) {
       ws.current.send(
         JSON.stringify({
@@ -443,6 +425,18 @@ export default function RidePlanScreen() {
     };
 
     await axios.post("https://exp.host/--/api/v2/push/send", message);
+  };
+
+  const handleSelectPlace = (lat: number, lng: number) => {
+    setMarker({ latitude: lat, longitude: lng });
+    setRegion({ ...region, latitude: lat, longitude: lng });
+
+    setlocationSelected(true);
+    requestNearbyDrivers();
+
+    if (currentLocation) {
+      fetchTravelTimes(currentLocation, { latitude: lat, longitude: lng });
+    }
   };
 
   const handleOrder = async () => {
@@ -470,29 +464,54 @@ export default function RidePlanScreen() {
 
   return (
     <KeyboardAvoidingView
-      style={[external.fx_1]}
-      behavior={Platform.OS === "ios" ? "padding" : "height"}
+      style={{ flex: 1 }}
+      behavior={Platform.OS === "ios" ? "padding" : undefined}
     >
+      <ScrollView
+        keyboardShouldPersistTaps="always"
+        contentContainerStyle={{ flexGrow: 1 }}
+        bounces={false}
+      >
       <View>
         <View
-          style={{ height: windowHeight(!keyboardAvoidingHeight ? 500 : 300) }}
+          style={{ height:!keyboardAvoidingHeight ? 500 : 300}}
         >
           <MapView
+            ref={mapRef}
             style={{ flex: 1 }}
             region={region}
+            showsUserLocation={true}
+            followsUserLocation={true}
+            onMapReady={() => {
+              if (currentLocation) {
+                mapRef.current?.animateToRegion(
+                  {
+                    latitude: currentLocation.latitude,
+                    longitude: currentLocation.longitude,
+                    latitudeDelta: 0.015,
+                    longitudeDelta: 0.015,
+                  },
+                  800
+                );
+              }
+            }}
             onRegionChangeComplete={(region) => setRegion(region)}
+            provider={undefined}
           >
             {marker && <Marker coordinate={marker} />}
             {currentLocation && <Marker coordinate={currentLocation} />}
-            {currentLocation && marker && (
+            {currentLocation && marker ? (
               <MapViewDirections
                 origin={currentLocation}
                 destination={marker}
                 apikey={process.env.EXPO_PUBLIC_GOOGLE_CLOUD_API_KEY!}
                 strokeWidth={4}
                 strokeColor="blue"
+                mode="DRIVING"
+                resetOnChange={false}
+                onError={(err) => console.log("Directions error", err)}
               />
-            )}
+            ) : null}
           </MapView>
         </View>
       </View>
@@ -575,7 +594,7 @@ export default function RidePlanScreen() {
                         >
                           <View>
                             <Text style={{ fontSize: 20, fontWeight: "600" }}>
-                              RideWave {driver?.vehicle_type}
+                        Chakraa {driver?.vehicle_type}
                             </Text>
                             <Text style={{ fontSize: 16 }}>
                               {getEstimatedArrivalTime(travelTimes.driving)}{" "}
@@ -588,7 +607,7 @@ export default function RidePlanScreen() {
                               fontWeight: "600",
                             }}
                           >
-                            BDT{" "}
+                            IND{" "}
                             {(
                               distance.toFixed(2) * parseInt(driver.rate)
                             ).toFixed(2)}
@@ -664,18 +683,20 @@ export default function RidePlanScreen() {
                   borderRadius: 15,
                   marginBottom: windowHeight(15),
                   paddingHorizontal: windowWidth(15),
-                  paddingVertical: windowHeight(5),
+                  paddingVertical: windowHeight(8),
+                  overflow: "visible",
                 }}
               >
-                <View style={{ flexDirection: "row" }}>
+                {/* CURRENT LOCATION */}
+                <View style={{ flexDirection: "row", marginBottom: 12 }}>
                   <PickLocation />
                   <View
                     style={{
-                      width: Dimensions.get("window").width * 1 - 110,
+                      width: Dimensions.get("window").width - 110,
                       borderBottomWidth: 1,
                       borderBottomColor: "#999",
                       marginLeft: 5,
-                      height: windowHeight(20),
+                      paddingBottom: 5,
                     }}
                   >
                     <Text
@@ -685,84 +706,69 @@ export default function RidePlanScreen() {
                         paddingLeft: 5,
                       }}
                     >
-                      Current Location
+                      {currentLocationName}
                     </Text>
                   </View>
                 </View>
-                <View
-                  style={{
-                    flexDirection: "row",
-                    paddingVertical: 12,
+
+                {/* GOOGLE AUTOCOMPLETE */}
+                <GooglePlacesAutocomplete
+                  placeholder="Where to?"
+                  fetchDetails
+                  enablePoweredByContainer={false}
+                  currentLocation
+                  currentLocationLabel="📍 Use my current location"
+                  query={{
+                    key: process.env.EXPO_PUBLIC_GOOGLE_CLOUD_API_KEY,
+                    language: "en",
                   }}
-                >
-                  <PlaceHolder />
-                  <View
-                    style={{
-                      marginLeft: 5,
-                      width: Dimensions.get("window").width * 1 - 110,
-                    }}
-                  >
-                    <GooglePlacesAutocomplete
-                      placeholder="Where to?"
-                      onPress={(data, details = null) => {
-                        setkeyboardAvoidingHeight(true);
-                        setPlaces([
-                          {
-                            description: data.description,
-                            place_id: data.place_id,
-                          },
-                        ]);
-                      }}
-                      query={{
-                        key: `${process.env.EXPO_PUBLIC_GOOGLE_CLOUD_API_KEY!}`,
-                        language: "en",
-                      }}
-                      styles={{
-                        textInputContainer: {
-                          width: "100%",
-                        },
-                        textInput: {
-                          height: 38,
-                          color: "#000",
-                          fontSize: 16,
-                        },
-                        predefinedPlacesDescription: {
-                          color: "#000",
-                        },
-                      }}
-                      textInputProps={{
-                        onChangeText: (text) => handleInputChange(text),
-                        value: query,
-                        onFocus: () => setkeyboardAvoidingHeight(true),
-                      }}
-                      onFail={(error) => console.log(error)}
-                      fetchDetails={true}
-                      debounce={200}
-                    />
-                  </View>
-                </View>
+                  onPress={(data, details) => {
+                    // Handle "Use my current location"
+                    if (data.description === "📍 Use my current location") {
+                      if (currentLocation) {
+                        handleSelectPlace(currentLocation.latitude, currentLocation.longitude);
+                      }
+                      return;
+                    }
+
+                    // Handle normal place selection
+                    if (details) {
+                      handleSelectPlace(
+                        details.geometry.location.lat,
+                        details.geometry.location.lng
+                      );
+                    }
+                  }}
+                  styles={{
+                    container: {
+                      flex: 0,
+                    },
+                    textInput: {
+                      height: 45,
+                      fontSize: 16,
+                      color: "#000",
+                      borderWidth: 0,
+                      backgroundColor: "#fff",
+                      paddingHorizontal: 10,
+                      borderRadius: 8,
+                    },
+                    listView: {
+                      maxHeight: 200,
+                      backgroundColor: "#fff",
+                      borderRadius: 10,
+                      marginTop: 5,
+                      elevation: 1000,
+                      zIndex: 1000,
+                    },
+                  }}
+                />
               </View>
-              {/* Last sessions */}
-              {places.map((place: any, index: number) => (
-                <Pressable
-                  key={index}
-                  style={{
-                    flexDirection: "row",
-                    alignItems: "center",
-                    marginBottom: windowHeight(20),
-                  }}
-                  onPress={() => handlePlaceSelect(place.place_id)}
-                >
-                  <PickUpLocation />
-                  <Text style={{ paddingLeft: 15, fontSize: 18 }}>
-                    {place.description}
-                  </Text>
-                </Pressable>
-              ))}
+
             </>
           )}
         </View>
       </View>
+      </ScrollView>
     </KeyboardAvoidingView>
   );
 }
