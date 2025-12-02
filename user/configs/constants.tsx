@@ -5,20 +5,23 @@ import Constants from "expo-constants";
 
 // Resolve host from env to avoid hardcoding IPs
 const env = Constants?.expoConfig?.extra || Constants?.manifest?.extra || {};
-const PC_LAN_IP = env.WS_HOST || env.API_HOST || env.SERVER_HOST || "localhost";
+const DEFAULT_IP = "192.168.137.1"; // Your Wi-Fi adapter IP
+const PC_LAN_IP = env.WEBSOCKET_URL?.replace("ws://", "").split(":")[0] || env.WS_HOST || env.API_HOST || env.SERVER_HOST || DEFAULT_IP;
+const API_PORT = env.PORT || "3000";
+const WS_PORT = env.WS_PORT || "8081";
 
 export const getWebSocketUrl = () => {
   if (Platform.OS === "android" && !Device.isDevice) {
-    return "ws://10.0.2.2:8080";
+    return `ws://10.0.2.2:${WS_PORT}`;
   }
-  return `ws://${PC_LAN_IP}:8080`;
+  return `ws://${PC_LAN_IP}:${WS_PORT}`;
 };
 
 export const getApiBaseUrl = () => {
   if (Platform.OS === "android" && !Device.isDevice) {
-    return "http://10.0.2.2:8080";
+    return `http://10.0.2.2:${API_PORT}`;
   }
-  return `http://${PC_LAN_IP}:8080`;
+  return `http://${PC_LAN_IP}:${API_PORT}`;
 };
 
 export const slides = [
@@ -92,4 +95,5 @@ export const slides = [
 //   },
 // ];
 
-export const ws = new WebSocket(getWebSocketUrl());
+// Don't create global WebSocket instance - create it per component as needed
+// export const ws = new WebSocket(getWebSocketUrl()); // REMOVED - causes connection issues

@@ -39,8 +39,13 @@ export default function index() {
     return null;
   }
 
+  // Temporarily bypass login redirect and always go to home
+  // return (
+  //   <Redirect href={!isLoggedIn ? "/(routes)/login" : "/(tabs)/home"} />
+  // );
+
   return (
-    <Redirect href={!isLoggedIn ? "/(routes)/login" : "/(tabs)/home"} />
+    <Redirect href="/(tabs)/home" />
   );
   
 }

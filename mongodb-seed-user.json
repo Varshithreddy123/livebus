@@ -1,0 +1,22 @@
+[
+  {
+    "_id": {
+      "$oid": "507f1f77bcf86cd799439012"
+    },
+    "name": "Test User",
+    "email": "user9182548149@example.com",
+    "phone_number": "+919182548149",
+    "ratings": 4.0,
+    "totalRides": 0,
+    "createdAt": {
+      "$date": "2024-01-15T10:00:00.000Z"
+    },
+    "cratedAt": {
+      "$date": "2024-01-15T10:00:00.000Z"
+    },
+    "updatedAt": {
+      "$date": "2024-01-15T10:00:00.000Z"
+    }
+  }
+]
+

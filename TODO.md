@@ -1,11 +1,11 @@
-# Backend URL Fix for Real Device Connectivity
+# TODO List for Ridewave App Updates
 
 ## Completed Tasks
-- [x] Update user/app.json to set EXPO_PUBLIC_SERVER_URI to "http://10.113.22.129:8080"
-- [x] Update user/screens/rideplan/rideplan.screen.tsx to hardcode WebSocket URL to "ws://10.113.22.129:8080" for real devices
+- [x] Set Amrita School of Engineering, Amritapuri, Kerala, India as default current location for ride calculations
+  - Modified `user/screens/rideplan/rideplan.screen.tsx` to remove user location fetching and keep default Amrita coordinates (9.0825, 76.4910)
+  - Updated toast message to inform users about using default location when permission is not granted
 
 ## Pending Tasks
-- [ ] Restart the Expo app to pick up new environment variables
-- [ ] Test backend reachability from phone browser at http://10.113.22.129:8080/api/v1/server-ip
-- [ ] Verify WebSocket connection in the app logs
-- [ ] Test driver data loading and ride planning features
+- [ ] Test the location fix in the app to ensure calculations start from Amrita coordinates
+- [ ] Verify that distance calculations and route planning work correctly with the fixed location
+- [ ] Update any documentation or user guides to reflect the default location behavior

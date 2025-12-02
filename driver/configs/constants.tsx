@@ -5,25 +5,32 @@ import React from "react";
 import { Platform } from "react-native";
 import * as Device from "expo-device";
 
-// PC LAN IP - update this if your WiFi IP changes
-const PC_LAN_IP = "10.30.255.94";
+import Constants from "expo-constants";
+
+// Get IP from environment or use default (192.168.137.1 - your Wi-Fi IP)
+const env = Constants?.expoConfig?.extra || Constants?.manifest?.extra || {};
+const DEFAULT_IP = "192.168.137.1"; // Your Wi-Fi adapter IP
+const WS_HOST = env.WEBSOCKET_URL?.replace("ws://", "").split(":")[0] || env.WS_HOST || DEFAULT_IP;
+const API_HOST = env.API_HOST || env.SERVER_HOST || DEFAULT_IP;
+const API_PORT = env.PORT || "3000";
+const WS_PORT = env.WS_PORT || "8081";
 
 export const getWebSocketUrl = () => {
   // Android Emulator: always use 10.0.2.2
   if (Platform.OS === "android" && !Device.isDevice) {
-    return "ws://10.0.2.2:8080";
+    return `ws://10.0.2.2:${WS_PORT}`;
   }
-  // Physical Android Device: use PC LAN IP
-  return `ws://${PC_LAN_IP}:8080`;
+  // Physical Device: use configured host
+  return `ws://${WS_HOST}:${WS_PORT}`;
 };
 
 export const getApiBaseUrl = () => {
   // Android Emulator: always use 10.0.2.2
   if (Platform.OS === "android" && !Device.isDevice) {
-    return "http://10.0.2.2:8080";
+    return `http://10.0.2.2:${API_PORT}`;
   }
-  // Physical Android Device: use PC LAN IP
-  return `http://${PC_LAN_IP}:8080`;
+  // Physical Device: use configured host
+  return `http://${API_HOST}:${API_PORT}`;
 };
 
 export const slides = [

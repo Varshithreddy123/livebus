@@ -1,0 +1,32 @@
+{
+  "driver": {
+    "name": "Test Driver",
+    "country": "India",
+    "phone_number": "+919182548149",
+    "email": "driver9182548149@example.com",
+    "vehicle_type": "Sedan",
+    "vehicle_color": "White",
+    "vehicleNumber": "DL01AB1234",
+    "registration_number": "DL01AB1234",
+    "registration_date": "2024-01-15",
+    "driving_license": "DL1234567890123",
+    "rate": "50",
+    "rating": 4.5,
+    "ratings": 4.5,
+    "totalEarning": 0,
+    "totalRides": 0,
+    "pendingRides": 0,
+    "cancelRides": 0,
+    "status": "active",
+    "latitude": 28.6139,
+    "longitude": 77.2090
+  },
+  "user": {
+    "name": "Test User",
+    "email": "user9182548149@example.com",
+    "phone_number": "+919182548149",
+    "ratings": 4.0,
+    "totalRides": 0
+  }
+}
+

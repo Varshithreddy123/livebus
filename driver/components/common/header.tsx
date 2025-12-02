@@ -58,7 +58,7 @@ export default function Header({ isOn, toggleSwitch }: HeaderProps) {
           <View style={styles.switchBorder}>
             <SwitchToggle
               switchOn={isOn}
-              onPress={toggleSwitch}
+              onPress={isOn ? () => {} : toggleSwitch}
               containerStyle={styles.switchView}
               circleStyle={styles.switchCircle}
               backgroundColorOff={color.lightGray}

@@ -23,6 +23,14 @@ export default function PhoneNumberVerificationScreen() {
     console.log("=== DRIVER RESEND OTP START ===");
     console.log("Resending OTP to:", driver.phone_number);
 
+    if (!driver.phone_number) {
+      Toast.show("Phone number not found. Please go back and try again.", {
+        placement: "bottom",
+        type: "warning",
+      });
+      return;
+    }
+
     try {
       const response = await axios.post(
         `${process.env.EXPO_PUBLIC_SERVER_URI}/driver/send-otp`,
@@ -32,15 +40,29 @@ export default function PhoneNumberVerificationScreen() {
       );
 
       console.log("Resend OTP response:", response.data);
-      Toast.show("OTP resent successfully!", {
-        placement: "bottom",
-        type: "success",
-      });
-      console.log("=== DRIVER RESEND OTP END (SUCCESS) ===");
+      
+      if (response.data.success) {
+        Toast.show("OTP resent successfully!", {
+          placement: "bottom",
+          type: "success",
+        });
+        console.log("=== DRIVER RESEND OTP END (SUCCESS) ===");
+      } else {
+        Toast.show(response.data.message || "Failed to resend OTP", {
+          placement: "bottom",
+          type: "danger",
+        });
+      }
     } catch (error: any) {
       console.error("=== DRIVER RESEND OTP ERROR ===");
       console.error("Error:", error);
-      Toast.show("Failed to resend OTP. Please try again.", {
+      
+      const errorMessage = 
+        error.response?.data?.message || 
+        error.message || 
+        "Failed to resend OTP. Please try again.";
+      
+      Toast.show(errorMessage, {
         placement: "bottom",
         type: "danger",
       });
@@ -52,32 +74,56 @@ export default function PhoneNumberVerificationScreen() {
     console.log("=== DRIVER OTP VERIFICATION START ===");
     console.log("OTP entered:", otp);
     console.log("Driver phone number:", driver.phone_number);
+    console.log("Driver params:", driver);
 
-    if (otp === "" || otp.length !== 4) {
+    // Validate OTP (Twilio OTPs are typically 4-6 digits)
+    if (otp === "" || otp.length < 4 || otp.length > 6) {
       console.log("Validation failed: Empty or invalid OTP");
-      Toast.show("Please enter a valid 4-digit OTP!", {
+      Toast.show("Please enter a valid OTP (4-6 digits)!", {
         placement: "bottom",
+        type: "warning",
       });
       console.log("=== DRIVER OTP VERIFICATION END (VALIDATION FAILED) ===");
       return;
     }
 
+    // Check if this is registration or login flow
+    const isRegistration = driver.isRegistration === "true" || driver.name || driver.email;
+    const endpoint = isRegistration 
+      ? `${process.env.EXPO_PUBLIC_SERVER_URI}/driver/verify-otp`
+      : `${process.env.EXPO_PUBLIC_SERVER_URI}/driver/login`;
+
+    console.log("Flow type:", isRegistration ? "REGISTRATION" : "LOGIN");
+    console.log("API endpoint:", endpoint);
+
     setLoader(true);
     console.log("Loading state set to true");
 
-    const requestPayload = {
-      phone_number: driver.phone_number,
-      otp: otp,
-    };
+    // Prepare request payload based on flow type
+    const requestPayload = isRegistration
+      ? {
+          phone_number: driver.phone_number,
+          otp: otp,
+          name: driver.name,
+          country: driver.country_label || driver.country || "India",
+          email: driver.email,
+          vehicle_type: driver.vehicle_type,
+          registration_number: driver.registration_number,
+          registration_date: driver.registration_date,
+          driving_license: driver.driving_license,
+          vehicle_color: driver.vehicle_color,
+          rate: driver.rate ? parseFloat(driver.rate as string) : null,
+        }
+      : {
+          phone_number: driver.phone_number,
+          otp: otp,
+        };
+
     console.log("Request payload:", requestPayload);
-    console.log("API endpoint:", `${process.env.EXPO_PUBLIC_SERVER_URI}/driver/login`);
 
     try {
-      console.log("Making axios POST request for driver login...");
-      const response = await axios.post(
-        `${process.env.EXPO_PUBLIC_SERVER_URI}/driver/login`,
-        requestPayload
-      );
+      console.log(`Making axios POST request for driver ${isRegistration ? "registration" : "login"}...`);
+      const response = await axios.post(endpoint, requestPayload);
 
       console.log("Axios request successful");
       console.log("Response status:", response.status);
@@ -114,14 +160,40 @@ export default function PhoneNumberVerificationScreen() {
       setLoader(false);
       console.log("Loading state set to false");
 
-      const errorMessage = error.response?.data?.message ||
-                          error.message ||
-                          "Network error occurred";
+      // Extract specific error message
+      let errorMessage = "An error occurred. Please try again.";
+      
+      if (error.response?.data) {
+        // Use API error message if available
+        errorMessage = error.response.data.message || 
+                      error.response.data.error || 
+                      errorMessage;
+        
+        // Handle specific error types
+        if (error.response.data.error === "DATABASE_CONNECTION_ERROR") {
+          errorMessage = "Database connection error. Please contact support.";
+        } else if (error.response.data.error === "OTP_ALREADY_USED") {
+          errorMessage = "This OTP has already been used. Please request a new one.";
+        } else if (error.response.data.error === "INVALID_PHONE_NUMBER") {
+          errorMessage = "Invalid phone number format. Please try again.";
+        } else if (error.response.status === 400) {
+          errorMessage = error.response.data.message || "Invalid OTP. Please check and try again.";
+        } else if (error.response.status === 403) {
+          errorMessage = "Driver not found. Please register first.";
+        } else if (error.response.status === 503) {
+          errorMessage = "Service temporarily unavailable. Please try again later.";
+        }
+      } else if (error.request) {
+        errorMessage = "Network error. Please check your internet connection.";
+      } else {
+        errorMessage = error.message || errorMessage;
+      }
 
       console.log("Displaying error toast:", errorMessage);
       Toast.show(errorMessage, {
         placement: "bottom",
         type: "danger",
+        duration: 4000, // Show for 4 seconds
       });
 
       console.log("=== DRIVER OTP VERIFICATION END (ERROR) ===");

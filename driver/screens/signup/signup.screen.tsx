@@ -1,4 +1,4 @@
-import { View, Text, ScrollView, Image } from "react-native";
+import { View, Text, ScrollView } from "react-native";
 import React, { useState } from "react";
 import { windowHeight, windowWidth } from "@/themes/app.constant";
 import ProgressBar from "@/components/common/progress.bar";
@@ -11,19 +11,17 @@ import { countryNameItems } from "@/configs/country-name-list";
 import Button from "@/components/common/button";
 import color from "@/themes/app.colors";
 import { router } from "expo-router";
-import Images from "@/utils/images";
 
 export default function SignupScreen() {
   const { colors } = useTheme();
   const [emailFormatWarning, setEmailFormatWarning] = useState("");
   const [showWarning, setShowWarning] = useState(false);
-const [formData, setFormData] = useState({
-  name: "",
-  phoneNumber: "",
-  email: "",
-  country: "🇮🇳 India",
-});
-
+  const [formData, setFormData] = useState({
+    name: "",
+    phoneNumber: "",
+    email: "",
+    country: "India 🇮🇳",
+  });
 
   const handleChange = (key: string, value: string) => {
     setFormData((prevData) => ({
@@ -32,40 +30,89 @@ const [formData, setFormData] = useState({
     }));
   };
 
+  // Normalize phone number - remove non-digit characters
+  const normalizePhoneNumber = (phone: string): string => {
+    return phone.replace(/\D/g, ""); // Remove all non-digit characters
+  };
+
+  // Validate phone number based on country
+  const validatePhoneNumber = (phone: string, countryCode: string): boolean => {
+    const normalized = normalizePhoneNumber(phone);
+    
+    // India phone numbers should be 10 digits
+    if (countryCode === "91") {
+      return normalized.length === 10;
+    }
+    
+    // For other countries, at least 7 digits
+    return normalized.length >= 7 && normalized.length <= 15;
+  };
+
   const gotoDocument = () => {
+    // Validate name
+    if (formData.name.trim() === "") {
+      setShowWarning(true);
+      return;
+    }
+
+    // Validate phone number
+    const phoneNumberData = countryNameItems.find(
+      (i: any) => i.label === formData.country
+    );
+
+    if (!phoneNumberData) {
+      setShowWarning(true);
+      return;
+    }
+
+    const normalizedPhone = normalizePhoneNumber(formData.phoneNumber);
+    if (!validatePhoneNumber(normalizedPhone, phoneNumberData.value)) {
+      setShowWarning(true);
+      return;
+    }
+
+    // Validate email
     const isEmailEmpty = formData.email.trim() === "";
     const isEmailInvalid = !isEmailEmpty && emailFormatWarning !== "";
 
-    if (isEmailEmpty) {
+    if (isEmailEmpty || isEmailInvalid) {
       setShowWarning(true);
-    } else if (isEmailInvalid) {
-      setShowWarning(true);
-    } else {
-      setShowWarning(false);
-      const phoneNumberData = countryNameItems.find(
-        (i: any) => i.label === formData.country
-      );
-
-      const phone_number = `+${phoneNumberData?.value || ""}${formData.phoneNumber}`;
-
-      const driverData = {
-        name: formData.name,
-        country: formData.country,
-        phone_number: phone_number,
-        email: formData.email,
-      };
-      router.push({
-        pathname: "/(routes)/document-verification",
-        params: driverData,
-      });
+      return;
     }
+
+    setShowWarning(false);
+    
+    // Construct phone number with country code (ensure + prefix)
+    const phone_number = `+${phoneNumberData.value}${normalizedPhone}`;
+
+    const driverData = {
+      name: formData.name.trim(),
+      country_label: formData.country,
+      country_code: phoneNumberData.value + "",
+      phone_number: phone_number,
+      email: formData.email.trim(),
+    };
+    
+    router.push({
+      pathname: "/(routes)/document-verification",
+      params: driverData,
+    });
   };
 
   return (
     <ScrollView>
       <View>
         {/* logo */}
-        
+        <Text
+          style={{
+            fontFamily: "TT-Octosquares-Medium",
+            fontSize: windowHeight(22),
+            paddingTop: windowHeight(50),
+            textAlign: "center",
+          }}
+        >
+          Chakraa Driver
+        </Text>
         <View style={{ padding: windowWidth(20) }}>
           <ProgressBar fill={1} />
           <View
@@ -74,7 +121,7 @@ const [formData, setFormData] = useState({
             <View style={styles.space}>
               <TitleView
                 title={"Create your account"}
-                subTitle={"Explore your life by joining Chakraa"}
+                subTitle={"Explore your life by joining Ride Wave"}
               />
               <Input
                 title="Name"

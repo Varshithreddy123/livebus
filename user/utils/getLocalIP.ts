@@ -2,10 +2,8 @@ import { Platform } from "react-native";
 import * as Device from "expo-device";
 
 const HOTSPOT_IP = "10.16.88.94"; // Your laptop Wi-Fi hotspot IP from ipconfig
-const WS_PORT = "8081";
-const API_PORT = "3000";
 
-const detectLocalHost = () => {
+export const detectLocalHost = (): string => {
   // 1️⃣ Android Emulator always maps laptop → 10.0.2.2
   if (Platform.OS === "android" && !Device.isDevice) {
     return "10.0.2.2";
@@ -28,18 +26,4 @@ const detectLocalHost = () => {
 
   // Fallback
   return HOTSPOT_IP;
-};
-
-export const getWebSocketUrl = (): string => {
-  const host = detectLocalHost();
-  const url = `ws://${host}:${WS_PORT}`;
-  console.log("🔌 WebSocket URL:", url);
-  return url;
-};
-
-export const getApiBaseUrl = (): string => {
-  const host = detectLocalHost();
-  const url = `http://${host}:${API_PORT}`;
-  console.log("📡 API Base URL:", url);
-  return url;
 };

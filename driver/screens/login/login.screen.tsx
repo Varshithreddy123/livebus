@@ -15,81 +15,99 @@ import axios from "axios";
 export default function LoginScreen() {
   const [phone_number, setphone_number] = useState("");
   const [loading, setloading] = useState(false);
-  const [countryCode, setCountryCode] = useState("+91");
+  const [countryCode, setCountryCode] = useState("+91"); // Changed from +880 to +91 (India)
+
+  // Normalize phone number - remove any spaces, dashes, or non-digit characters
+  const normalizePhoneNumber = (phone: string): string => {
+    return phone.replace(/\D/g, ""); // Remove all non-digit characters
+  };
+
+  // Validate phone number
+  const validatePhoneNumber = (phone: string, countryCode: string): boolean => {
+    const normalized = normalizePhoneNumber(phone);
+    
+    // India phone numbers should be 10 digits
+    if (countryCode === "+91") {
+      return normalized.length === 10;
+    }
+    
+    // For other countries, at least 7 digits
+    return normalized.length >= 7 && normalized.length <= 15;
+  };
 
   const handleSubmit = async () => {
-    console.log("=== DRIVER LOGIN SUBMIT START ===");
-    console.log("Phone number input:", phone_number);
-    console.log("Country code input:", countryCode);
-
+    // Validate inputs
     if (phone_number === "" || countryCode === "") {
-      console.log("Validation failed: Empty fields");
-      Toast.show("Please fill the fields!", {
+      Toast.show("Please fill all the fields!", {
+        type: "warning",
         placement: "bottom",
       });
-      console.log("=== DRIVER LOGIN SUBMIT END (VALIDATION FAILED) ===");
       return;
     }
 
-    const phoneNumber = `${countryCode}${phone_number}`;
-    console.log("Combined phone number:", phoneNumber);
-    console.log("Server URI:", process.env.EXPO_PUBLIC_SERVER_URI);
-    console.log("Full API endpoint:", `${process.env.EXPO_PUBLIC_SERVER_URI}/driver/send-otp`);
+    // Normalize and validate phone number
+    const normalizedPhone = normalizePhoneNumber(phone_number);
+    
+    if (!validatePhoneNumber(normalizedPhone, countryCode)) {
+      Toast.show(
+        countryCode === "+91" 
+          ? "Please enter a valid 10-digit phone number" 
+          : "Please enter a valid phone number",
+        {
+          type: "warning",
+          placement: "bottom",
+        }
+      );
+      return;
+    }
+
+    // Construct full phone number with country code
+    // Backend will normalize it, but we ensure it has + prefix
+    const phoneNumber = countryCode.startsWith("+") 
+      ? `${countryCode}${normalizedPhone}`
+      : `+${countryCode}${normalizedPhone}`;
 
     setloading(true);
-    console.log("Loading state set to true");
-
-    const requestPayload = { phone_number: phoneNumber };
-    console.log("Request payload:", requestPayload);
-
+    
     try {
-      console.log("Making axios POST request...");
       const response = await axios.post(
         `${process.env.EXPO_PUBLIC_SERVER_URI}/driver/send-otp`,
-        requestPayload
+        {
+          phone_number: phoneNumber,
+        }
       );
 
-      console.log("Axios request successful");
-      console.log("Response status:", response.status);
-      console.log("Response data:", response.data);
-
       setloading(false);
-      console.log("Loading state set to false");
-
-      const driver = {
-        phone_number: phoneNumber,
-      };
-      console.log("Navigating to phone verification screen with params:", driver);
-      router.push({
-        pathname: "/(routes)/verification-phone-number",
-        params: driver,
-      });
-
-      console.log("=== DRIVER LOGIN SUBMIT END (SUCCESS) ===");
+      
+      if (response.data.success) {
+        const driver = {
+          phone_number: phoneNumber,
+        };
+        router.push({
+          pathname: "/(routes)/verification-phone-number",
+          params: driver,
+        });
+      } else {
+        Toast.show(response.data.message || "Failed to send OTP", {
+          type: "danger",
+          placement: "bottom",
+        });
+      }
     } catch (error: any) {
-      console.log("=== AXIOS ERROR CAUGHT ===");
-      console.error("Error object:", error);
-      console.error("Error message:", error.message);
-      console.error("Error code:", error.code);
-      console.error("Error response:", error.response);
-      console.error("Error response status:", error.response?.status);
-      console.error("Error response data:", error.response?.data);
-      console.error("Error request:", error.request);
-
+      console.error("OTP send error:", error);
       setloading(false);
-      console.log("Loading state set to false");
-
-      const errorMessage = error.response?.data?.message ||
-                          error.message ||
-                          "Network error occurred";
-
-      console.log("Displaying error toast:", errorMessage);
+      
+      // Show specific error message from API if available
+      const errorMessage = 
+        error.response?.data?.message || 
+        error.response?.data?.error ||
+        error.message ||
+        "Something went wrong! Please check your phone number and try again.";
+      
       Toast.show(errorMessage, {
         type: "danger",
         placement: "bottom",
       });
-
-      console.log("=== DRIVER LOGIN SUBMIT END (ERROR) ===");
     }
   };
 
@@ -116,7 +134,6 @@ export default function LoginScreen() {
                     disabled={loading}
                     height={windowHeight(35)}
                     onPress={() => handleSubmit()}
-                    loading={loading}
                   />
                 </View>
                 <View

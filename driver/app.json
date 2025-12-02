@@ -52,7 +52,10 @@
       "eas": {
         "projectId": "6cdffa57-e0c7-4571-bbe8-7b3c97422bc2"
       },
-      "WEBSOCKET_URL": "ws://10.30.255.94:8080"
+      "WEBSOCKET_URL": "ws://10.67.231.94:8080",
+      "WS_HOST": "10.67.231.94",
+      "API_HOST": "10.67.231.94",
+      "PORT": "8080"
     }
   }
 }

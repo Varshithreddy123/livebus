@@ -36,12 +36,12 @@ export default function HomeScreen() {
   const notificationListener = useRef<any>();
   const { driver, loading: DriverDataLoading } = useGetDriverData();
   const [userData, setUserData] = useState<any>(null);
-  const [isOn, setIsOn] = useState<any>();
+  const [isOn, setIsOn] = useState<any>(true);
   const [loading, setloading] = useState(false);
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [region, setRegion] = useState<any>({
-    latitude: 37.78825,
-    longitude: -122.4324,
+    latitude: 9.0825,
+    longitude: 76.4910,
     latitudeDelta: 0.0922,
     longitudeDelta: 0.0421,
   });
@@ -113,7 +113,8 @@ export default function HomeScreen() {
   useEffect(() => {
     const fetchStatus = async () => {
       const status: any = await AsyncStorage.getItem("status");
-      setIsOn(status === "active" ? true : false);
+      setIsOn(true); // Always set to active
+      await AsyncStorage.setItem("status", "active"); // Ensure stored status is active
     };
     fetchStatus();
   }, []);
@@ -176,39 +177,78 @@ export default function HomeScreen() {
 
   // socket updates
   useEffect(() => {
-  const initializeWebSocket = () => {
-    const { getWebSocketUrl } = require("@/utils/apiConfig");
-    ws.current = new WebSocket(getWebSocketUrl());
-      ws.current.onopen = () => {
-        console.log("Connected to WebSocket server");
-        setWsConnected(true);
-      };
+    let reconnectAttempts = 0;
+    const MAX_RECONNECT_ATTEMPTS = 10;
+    let reconnectTimeout: NodeJS.Timeout | null = null;
 
-      ws.current.onmessage = (e: any) => {
-        const message = JSON.parse(e.data);
-        console.log("Received message:", message);
-        // Handle received location updates here
-      };
+    const initializeWebSocket = () => {
+      try {
+        const { getWebSocketUrl } = require("@/utils/apiConfig");
+        const wsUrl = getWebSocketUrl();
+        console.log("🔌 Connecting to WebSocket:", wsUrl);
+        
+        ws.current = new WebSocket(wsUrl);
+        
+        ws.current.onopen = () => {
+          console.log("✅ Connected to WebSocket server");
+          console.log("DRIVER WS CONNECTED", wsUrl);
+          setWsConnected(true);
+          reconnectAttempts = 0; // Reset on successful connection
+        };
 
-      ws.current.onerror = (e: any) => {
-        console.log("WebSocket error:", e.message);
-      };
+        ws.current.onmessage = (e: any) => {
+          try {
+            const message = JSON.parse(e.data);
+            console.log("📨 Received WebSocket message:", message.type || "unknown");
+            // Handle received messages (ride requests, etc.)
+            if (message.type === "rideRequest") {
+              // Handle ride request notifications
+              console.log("New ride request received:", message);
+            }
+          } catch (error) {
+            console.error("❌ Error parsing WebSocket message:", error);
+          }
+        };
 
-      ws.current.onclose = (e: any) => {
-        console.log("WebSocket closed:", e.code, e.reason);
+        ws.current.onerror = (e: any) => {
+          console.error("❌ WebSocket error:", e.message || "Unknown error");
+          setWsConnected(false);
+        };
+
+        ws.current.onclose = (e: any) => {
+          console.log("⚠️ WebSocket closed:", e.code, e.reason || "No reason provided");
+          setWsConnected(false);
+          
+          // Don't reconnect if we've exceeded max attempts
+          if (reconnectAttempts >= MAX_RECONNECT_ATTEMPTS) {
+            console.error("❌ Max reconnection attempts reached. Please check your connection.");
+            return;
+          }
+
+          // Attempt to reconnect with exponential backoff
+          reconnectAttempts++;
+          const delay = Math.min(5000 * Math.pow(2, reconnectAttempts - 1), 30000); // Max 30 seconds
+          console.log(`🔄 Reconnecting in ${delay}ms (attempt ${reconnectAttempts}/${MAX_RECONNECT_ATTEMPTS})...`);
+          
+          reconnectTimeout = setTimeout(() => {
+            initializeWebSocket();
+          }, delay);
+        };
+      } catch (error) {
+        console.error("❌ Error initializing WebSocket:", error);
         setWsConnected(false);
-        // Attempt to reconnect after a delay
-        setTimeout(() => {
-          initializeWebSocket();
-        }, 5000);
-      };
+      }
     };
 
     initializeWebSocket();
 
     return () => {
+      if (reconnectTimeout) {
+        clearTimeout(reconnectTimeout);
+      }
       if (ws.current) {
         ws.current.close();
+        ws.current = null;
       }
     };
   }, []);
@@ -235,30 +275,42 @@ export default function HomeScreen() {
   };
 
   const sendLocationUpdate = async (location: any) => {
-    const accessToken = await AsyncStorage.getItem("accessToken");
-    await axios
-      .get(`${process.env.EXPO_PUBLIC_SERVER_URI}/driver/me`, {
+    try {
+      const accessToken = await AsyncStorage.getItem("accessToken");
+      if (!accessToken) {
+        console.warn("⚠️ No access token found. Cannot send location update.");
+        return;
+      }
+
+      // Check WebSocket connection first
+      if (!ws.current || ws.current.readyState !== WebSocket.OPEN) {
+        console.warn("⚠️ WebSocket not connected. Cannot send location update.");
+        return;
+      }
+
+      // Get driver data to include driver ID
+      const driverRes = await axios.get(`${process.env.EXPO_PUBLIC_SERVER_URI}/driver/me`, {
         headers: {
           Authorization: `Bearer ${accessToken}`,
         },
-      })
-      .then((res) => {
-        if (res.data) {
-          if (ws.current && ws.current.readyState === WebSocket.OPEN) {
-            const message = JSON.stringify({
-              type: "locationUpdate",
-              data: location,
-              role: "driver",
-              driver: res.data.driver.id!,
-              token: accessToken,
-            });
-            ws.current.send(message);
-          }
-        }
-      })
-      .catch((error) => {
-        console.log(error);
       });
+
+      if (driverRes.data?.driver) {
+        const message = JSON.stringify({
+          type: "locationUpdate",
+          data: location,
+          role: "driver",
+          driver: driverRes.data.driver.id,
+          token: accessToken,
+        });
+        
+        ws.current.send(message);
+        // Log only occasionally to avoid spam
+         console.log("📍 Location update sent:", location);
+      }
+    } catch (error: any) {
+      console.error("❌ Error sending location update:", error.message || error);
+    }
   };
 
   useEffect(() => {
@@ -284,9 +336,9 @@ export default function HomeScreen() {
           ) {
             setCurrentLocation(newLocation);
             setLastLocation(newLocation);
-            if (ws.readyState === WebSocket.OPEN) {
-              await sendLocationUpdate(newLocation);
-            }
+            if (ws.current && ws.current.readyState === WebSocket.OPEN) {
+                await sendLocationUpdate(newLocation);
+              }
           }
         }
       );
@@ -321,7 +373,7 @@ export default function HomeScreen() {
       const changeStatus = await axios.put(
         `${process.env.EXPO_PUBLIC_SERVER_URI}/driver/update-status`,
         {
-          status: !isOn ? "active" : "inactive",
+          status: "active",
         },
         {
           headers: {
@@ -330,14 +382,9 @@ export default function HomeScreen() {
         }
       );
       if (changeStatus.data) {
-        const newStatus = !isOn;
-        setIsOn(newStatus);
+        setIsOn(true);
         await AsyncStorage.setItem("status", changeStatus.data.driver.status);
-        if (!newStatus) {
-          console.log("driver is on leave");
-        } else {
-          console.log("driver is on duty");
-        }
+        console.log("driver is on duty");
         setloading(false);
       } else {
         setloading(false);

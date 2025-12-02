@@ -14,7 +14,8 @@ const styles = StyleSheet.create({
     borderStartEndRadius: windowHeight(16),
     borderTopRightRadius: windowHeight(16),
     borderTopLeftRadius: windowHeight(16),
-     
+    position: "relative",
+    zIndex: 999,
   },
   backgroundImage: {
     width: "100%",
@@ -25,6 +26,8 @@ const styles = StyleSheet.create({
   contentContainer: {
     flex: 1,
     justifyContent: "flex-end",
+    position: "relative",
+    zIndex: 999,
   },
   img: {
     height: windowHeight(28),
